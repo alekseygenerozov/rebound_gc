@@ -105,8 +105,9 @@ def main():
 	##Unique tag for output file.
 	# tag=str(uuid.uuid4())
 	print(get_last_index())
-	loc="trial_{0}/".format(get_last_index())
 
+	loc="trial_{0}/".format(get_last_index())
+	bc.bash_command('mkdir {0}'.format(loc))
 	##Default stellar parameters 
 	config=configparser.SafeConfigParser(defaults={'name': 'archive', 'N':'100', 'e':'0.7',
 		'gravity':'compensated', 'integrator':'ias15', 'dt':'0', \
