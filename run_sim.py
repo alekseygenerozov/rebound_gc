@@ -105,7 +105,7 @@ def main():
 	##Unique tag for output file.
 	# tag=str(uuid.uuid4())
 	print(get_last_index())
-	loc="trial_1/"
+	loc="trial_{0}/".format(get_last_index())
 
 	##Default stellar parameters 
 	config=configparser.SafeConfigParser(defaults={'name': 'archive', 'N':'100', 'e':'0.7',
@@ -179,7 +179,7 @@ def main():
 			a0=density(a_min, a_max, p)
 			m=density(1., 60., 1.7)*(mbar/6.0)
 			M = rand.uniform(0., 2.*np.pi)
-			print((sim.particles[0].m/m)**(1./3.)*0.1*cgs.au/cgs.pc)
+			print(m, (sim.particles[0].m/m)**(1./3.)*0.1*cgs.au/cgs.pc)
 			sim.add(m = m, a = a0, e = e, inc=inc, Omega = Omega, omega = omega, M = M, primary=sim.particles[0],\
 				r=(sim.particles[0].m/m)**(1./3.)*0.1*cgs.au/cgs.pc)
 		##Indices of each component
@@ -235,8 +235,8 @@ def main():
 	sim.collision_resolve=get_tde
 	
 	##Stellar potential
-	rinf=3.8
-	alpha=1.33
+	rinf=4.0
+	alpha=1.5
 	rebx = reboundx.Extras(sim)
 	menc=rebx.add("menc")
 	menc.params["rinf"]=rinf
