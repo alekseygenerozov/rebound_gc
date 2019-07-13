@@ -86,7 +86,7 @@ def get_tde(sim, reb_coll):
 	idx, idx0 = max(p1, p2), min(p1, p2)
 	if idx0==0:
 		##idx decremented by 1 because there is no orbit 0
-		name=sim[0].simulationarchive_filename
+		name=sim[0].simulationarchive_filename.decode('utf-8')
 		f=open(name.replace('.bin', '_tde'), 'a+')
 		f.write('{0} {1} {2} {3} TDE!\n'.format(sim[0].t, orbits[idx-1].a, orbits[idx-1].e, idx))
 		f.close()
@@ -116,8 +116,7 @@ def main():
 		'gravity':'compensated', 'integrator':'ias15', 'dt':'0', \
 		'a_min':'0.05', 'a_max':'0.5', 'ang1_mean':'0', 'ang2_mean':'0', 'ang3_mean':'0', 'ang1':'2.',\
 		 'ang2':'2.', 'ang3':'2.', 'keep_bins':'False', 'coll':'line', 'pRun':'0.1', 'pOut':'0.1', 
-		'p':'1', 'frac':'2.5e-3', 'outDir':'./', 'gr':'True', 'rinf':'4.0', 'alpha':'1.5',
-		'rt':'3.57e-5'}, dict_type=OrderedDict)
+		'p':'1', 'frac':'2.5e-3', 'outDir':'./', 'gr':'True', 'rinf':'4.0', 'alpha':'1.5'}, dict_type=OrderedDict)
 	# config.optionxform=str
 	config.read(config_file)
 
@@ -143,7 +142,7 @@ def main():
 	sim = rebound.Simulation()
 	sim.G = 1.	
 	##Central object
-	sim.add(m = 4e6) 
+	sim.add(m = 4e6, r=3.57e-5) 
 	sim.gravity=config.get('params', 'gravity')
 	sim.integrator=config.get('params', 'integrator')
 	dt=config.getfloat('params', 'dt')
@@ -180,7 +179,7 @@ def main():
 		ang3_mean=config.getfloat(ss, 'ang3_mean')
 		ang3=config.getfloat(ss, 'ang3')
 		##We can generalize this to be a function?
-		rt=config.getfloat(ss, 'rt')
+		# rt=config.getfloat(ss, 'rt')
 
 		N0=len(sim.particles)
 		for l in range(0,N): # Adds stars
@@ -193,7 +192,7 @@ def main():
 			M = rand.uniform(0., 2.*np.pi)
 			# print(m, (sim.particles[0].m/m)**(1./3.)*0.1*cgs.au/cgs.pc)
 			sim.add(m = m, a = a0, e = e, inc=inc, Omega = Omega, omega = omega, M = M, primary=sim.particles[0],\
-				r=rt)
+				r=0)
 		##Indices of each component
 		nparts[ss]=(N0,N0+N-1)
 	
@@ -265,6 +264,7 @@ def main():
 	sim.move_to_com()
 	sim.simulationarchive_snapshot(loc+name)
 	bc.bash_command('cp {0} {1}'.format(config_file, loc))
+
 
 	en=sim.calculate_energy()
 	print(sim.N, rebound.__version__)
