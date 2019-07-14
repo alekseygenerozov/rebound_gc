@@ -142,7 +142,7 @@ def main():
 	sim = rebound.Simulation()
 	sim.G = 1.	
 	##Central object
-	sim.add(m = 4e6, r=3.57e-5) 
+	sim.add(m = 4e6) 
 	sim.gravity=config.get('params', 'gravity')
 	sim.integrator=config.get('params', 'integrator')
 	dt=config.getfloat('params', 'dt')
@@ -179,7 +179,7 @@ def main():
 		ang3_mean=config.getfloat(ss, 'ang3_mean')
 		ang3=config.getfloat(ss, 'ang3')
 		##We can generalize this to be a function?
-		# rt=config.getfloat(ss, 'rt')
+		rt=config.getfloat(ss, 'rt')
 
 		N0=len(sim.particles)
 		for l in range(0,N): # Adds stars
@@ -192,7 +192,7 @@ def main():
 			M = rand.uniform(0., 2.*np.pi)
 			# print(m, (sim.particles[0].m/m)**(1./3.)*0.1*cgs.au/cgs.pc)
 			sim.add(m = m, a = a0, e = e, inc=inc, Omega = Omega, omega = omega, M = M, primary=sim.particles[0],\
-				r=0)
+				r=rt)
 		##Indices of each component
 		nparts[ss]=(N0,N0+N-1)
 	
