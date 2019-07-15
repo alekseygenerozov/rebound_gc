@@ -244,7 +244,7 @@ def main():
 	ms=np.array([pp.m for pp in sim.particles[1:]])
 	print(np.sum(ms))
 	sim.collision=coll
-	sim.collision_resolve=get_tde
+	sim.collision_resolve='merge'
 	
 	##Stellar potential
 	rebx = reboundx.Extras(sim)
