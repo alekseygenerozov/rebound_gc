@@ -73,6 +73,13 @@ def density(min1, max1, p):
 	else:
 		return (r*(max1**(1.-p)-min1**(1.-p))+min1**(1.-p))**(1./(1-p))
 
+def mpow_gc(mbar):
+	return density(1., 60., 1.7)*(mbar/6.0)
+
+
+def mfixed(mbar):
+	return mbar
+
 def heartbeat(sim):
 	print(sim.contents.dt, sim.contents.t)
 # sim is a pointer to the simulation object,
@@ -117,7 +124,7 @@ def main():
 		'a_min':'0.05', 'a_max':'0.5', 'ang1_mean':'0', 'ang2_mean':'0', 'ang3_mean':'0', 'ang1':'2.',\
 		 'ang2':'2.', 'ang3':'2.', 'keep_bins':'False', 'coll':'line', 'pRun':'0.1', 'pOut':'0.1', 
 		'p':'1', 'frac':'2.5e-3', 'outDir':'./', 'gr':'True', 'rinf':'4.0', 'alpha':'1.5',
-		'rt':'3.57e-5'}, dict_type=OrderedDict)
+		'rt':'3.57e-5', 'mf':'mfixed'}, dict_type=OrderedDict)
 	# config.optionxform=str
 	config.read(config_file)
 
@@ -190,7 +197,8 @@ def main():
 			a0=density(a_min, a_max, p)
 			##Better way to include the mass spectrum...name of function define MF as a parameter.
 			# m=density(1., 60., 1.7)*(mbar/6.0)
-			m=mbar
+			# m=mbar
+			m=locals()[config.get("mf")]()
 			M = rand.uniform(0., 2.*np.pi)
 			# print(m, (sim.particles[0].m/m)**(1./3.)*0.1*cgs.au/cgs.pc)
 			sim.add(m = m, a = a0, e = e, inc=inc, Omega = Omega, omega = omega, M = M, primary=sim.particles[0],\
