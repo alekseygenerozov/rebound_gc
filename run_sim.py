@@ -252,7 +252,7 @@ def main():
 	print(np.sum(ms))
 	sim.collision=coll
 	sim.collision_resolve=get_tde
-	merge=args.getboolean('params', 'merge')
+	merge=config.getboolean('params', 'merge')
 	if merge:
 		sim.collision_resolve='merge'
 	
