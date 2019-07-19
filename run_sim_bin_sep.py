@@ -280,7 +280,7 @@ def main():
 	# merge=config.getboolean('params', 'merge')
 	# if merge:
 	# 	sim.collision_resolve='merge'
-	print("gr:", gr, "rinf:", rinf, "alpha:", alpha, "merge:", merge)
+	print("gr:", gr, "rinf:", rinf, "alpha:", alpha)
 
 
 	
