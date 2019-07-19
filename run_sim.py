@@ -105,6 +105,8 @@ def main():
 		description='Set up a rebound run')
 	parser.add_argument('--config', nargs=1, default='config',
 		help='File containing simulation parameters')
+	parser.add_argument('--index', '-i', type=int, default=1,
+		help='Index of output file')
 	# parser.add_argument('--keep_bins', action='store_true',
 	# 	help="Don't delete bins from simulation")
 
@@ -114,9 +116,9 @@ def main():
 	config_file=args.config
 	##Unique tag for output file.
 	# tag=str(uuid.uuid4())
-	print(get_last_index())
+	# print(get_last_index())
 
-	loc="trial_{0}/".format(get_last_index())
+	loc="trial_{0}/".format(args.index)
 	bc.bash_command('mkdir {0}'.format(loc))
 	##Default stellar parameters 
 	config=configparser.SafeConfigParser(defaults={'name': 'archive', 'N':'100', 'e':'0.7',
