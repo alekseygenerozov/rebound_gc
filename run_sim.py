@@ -124,7 +124,7 @@ def main():
 		'a_min':'0.05', 'a_max':'0.5', 'ang1_mean':'0', 'ang2_mean':'0', 'ang3_mean':'0', 'ang1':'2.',\
 		 'ang2':'2.', 'ang3':'2.', 'keep_bins':'False', 'coll':'line', 'pRun':'0.1', 'pOut':'0.1', 
 		'p':'1', 'frac':'2.5e-3', 'outDir':'./', 'gr':'True', 'rinf':'4.0', 'alpha':'1.5',
-		'rt':'3.57e-5', 'mf':"mfixed"}, dict_type=OrderedDict)
+		'rt':'3.57e-5', 'mf':"mfixed", 'merge':'False'}, dict_type=OrderedDict)
 	# config.optionxform=str
 	config.read(config_file)
 
@@ -251,7 +251,10 @@ def main():
 	ms=np.array([pp.m for pp in sim.particles[1:]])
 	print(np.sum(ms))
 	sim.collision=coll
-	sim.collision_resolve='merge'
+	sim.collision_resolve=get_tde
+	merge=args.getboolean('params', 'merge')
+	if merge:
+		sim.collision_resolve='merge'
 	
 	##Stellar potential
 	rebx = reboundx.Extras(sim)
