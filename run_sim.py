@@ -141,7 +141,6 @@ def main():
 	gr=config.getboolean('params', 'gr')
 	rinf=config.getfloat('params', 'rinf')
 	alpha=config.getfloat('params', 'alpha')
-	print(gr)
 
 	#print pRun, pOut, rt, coll
 	sections=config.sections()
@@ -255,6 +254,9 @@ def main():
 	merge=config.getboolean('params', 'merge')
 	if merge:
 		sim.collision_resolve='merge'
+	print("gr:", gr, "rinf:", rinf, "alpha:", alpha, "merge:", merge)
+
+
 	
 	##Stellar potential
 	rebx = reboundx.Extras(sim)
