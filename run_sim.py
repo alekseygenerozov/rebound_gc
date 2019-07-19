@@ -205,12 +205,8 @@ def main():
 		##Indices of each component
 		nparts[ss]=(N0,N0+N-1)
 	
-	f=open(loc+'init_disk', 'w')
 	sim.move_to_com()
-	for ii in range(len(sim.particles)):
-		f.write('{0:.16e} {1:.16e} {2:.16e} {3:.16e} {4:.16e} {5:.16e} {6:.16e}\n'.format(sim.particles[ii].x, sim.particles[ii].y, sim.particles[ii].z,\
-			sim.particles[ii].vx, sim.particles[ii].vy, sim.particles[ii].vz, sim.particles[ii].m))
-	f.close()
+
 
 	fen=open(loc+name.replace('.bin', '_en'), 'a')
 	fen.write(sim.gravity+'_'+sim.integrator+'_'+'{0}'.format(sim.dt))
@@ -286,7 +282,13 @@ def main():
 	t=0.0
 	delta_t=0.01*pRun
 	orb_idx=0
-	print(delta_t, pRun)
+	# print(delta_t, pRun)
+	f=open(loc+'init_disk', 'w')
+	for ii in range(len(sim.particles)):
+		f.write('{0:.16e} {1:.16e} {2:.16e} {3:.16e} {4:.16e} {5:.16e} {6:.16e}\n'.format(sim.particles[ii].x, sim.particles[ii].y, sim.particles[ii].z,\
+			sim.particles[ii].vx, sim.particles[ii].vy, sim.particles[ii].vz, sim.particles[ii].m))
+	f.close()
+
 	while(t<pRun):
 		orbits=sim.calculate_orbits(primary=sim.particles[0])
 		np.savetxt(loc+name.replace('.bin', '_out_{0}.dat'.format(orb_idx)), [[oo.a, oo.e, oo.inc, oo.Omega, oo.omega, oo.f] for oo in orbits])
