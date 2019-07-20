@@ -99,6 +99,7 @@ def bin_sep(sim, reb_coll):
 		rp=orbits[idx-1].a*(1-orbits[idx-1].e)
 		rg=4.0e6*(cgs.G*cgs.M_sun/cgs.c**2.0/cgs.pc)
 		##Remove plunging orbits...
+		print(rp<4*rg)
 		if rp<4.0*rg:
 			sim.remove(idx)
 			return 0
@@ -299,7 +300,7 @@ def main():
 	##Set up simulation archive for output
 	# sa = rebound.SimulationArchive(loc+name, rebxfilename='rebx.bin')
 	sim.automateSimulationArchive(loc+name,interval=pOut*pRun,deletefile=True)
-	sim.heartbeat=heartbeat
+	# sim.heartbeat=heartbeat
 	sim.move_to_com()
 	sim.simulationarchive_snapshot(loc+name)
 	bc.bash_command('cp {0} {1}'.format(config_file, loc))
