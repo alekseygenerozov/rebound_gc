@@ -99,16 +99,16 @@ def bin_sep(sim, reb_coll):
 		rp=orbits[idx-1].a*(1-orbits[idx-1].e)
 		rg=4.0e6*(cgs.G*cgs.M_sun/cgs.c**2.0/cgs.pc)
 		##Remove plunging orbits...
-		print(rp<4*rg)
-		if rp<4.0*rg:
-			sim.remove(idx)
+		print(rp<10.0*rg)
+		if rp<10.0*rg:
+			sim[0].remove(idx)
 			return 0
 		e_new=1.0-rp/a_new
 		##Also remove TDEs
-		sim.add(a=a_new, e=e_new, inc=orbits[idx-1].inc,\
+		sim[0].add(a=a_new, e=e_new, inc=orbits[idx-1].inc,\
 		 omega=orbits[idx-1].omega, Omega=orbits[idx-1].Omega,\
 		 M=orbits[idx-1].M, m=sim.particles[idx].m/2.0, r=0, primary=sim.particles[0])
-		sim.remove(idx)
+		sim[0].remove(idx)
 
 		f=open(name.replace('.bin', '_tde'), 'a+')
 		f.write('{0} {1} {2} {3} TDE!\n'.format(sim[0].t, orbits[idx-1].a, orbits[idx-1].e, idx))
