@@ -107,7 +107,7 @@ def bin_sep(sim, reb_coll):
 		##Also remove TDEs
 		sim[0].add(a=a_new, e=e_new, inc=orbits[idx-1].inc,\
 		 omega=orbits[idx-1].omega, Omega=orbits[idx-1].Omega,\
-		 M=orbits[idx-1].M, m=sim.particles[idx].m/2.0, r=0, primary=sim.particles[0])
+		 M=orbits[idx-1].M, m=sim[0].particles[idx].m/2.0, r=0, primary=sim[0].particles[0])
 		sim[0].remove(idx)
 
 		f=open(name.replace('.bin', '_tde'), 'a+')
