@@ -320,7 +320,8 @@ def main():
 
 	while(t<pRun):
 		orbits=sim.calculate_orbits(primary=sim.particles[0])
-		np.savetxt(loc+name.replace('.bin', '_out_{0}.dat'.format(orb_idx)), [[oo.a, oo.e, oo.inc, oo.Omega, oo.omega, oo.f] for oo in orbits])
+		ms=[pp.m for pp in sim.particles[1:]]
+		np.savetxt(loc+name.replace('.bin', '_out_{0}.dat'.format(orb_idx)), [[oo.a, oo.e, oo.inc, oo.Omega, oo.omega, oo.f, ms[jj]] for jj,oo in enumerate(orbits)])
 		sim.integrate(sim.t+delta_t)
 		t+=delta_t
 		orb_idx+=1
