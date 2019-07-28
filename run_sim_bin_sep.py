@@ -105,10 +105,10 @@ def bin_sep(sim, reb_coll):
 			return 0
 		e_new=1.0-rp/a_new
 		##Also remove TDEs
-		sim[0].add(a=a_new, e=e_new, inc=orbits[idx-1].inc,\
-		 omega=orbits[idx-1].omega, Omega=orbits[idx-1].Omega,\
-		 M=orbits[idx-1].M, m=sim[0].particles[idx].m/2.0, r=0, primary=sim[0].particles[0])
-		sim[0].remove(idx)
+		# sim[0].add(a=a_new, e=e_new, inc=orbits[idx-1].inc,\
+		#  omega=orbits[idx-1].omega, Omega=orbits[idx-1].Omega,\
+		#  M=orbits[idx-1].M, m=sim[0].particles[idx].m/2.0, r=0, primary=sim[0].particles[0])
+		# sim[0].remove(idx)
 
 		f=open(name.replace('.bin', '_tde'), 'a+')
 		f.write('{0} {1} {2} {3} TDE!\n'.format(sim[0].t, orbits[idx-1].a, orbits[idx-1].e, idx))
