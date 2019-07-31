@@ -93,9 +93,15 @@ def get_tde(sim, reb_coll):
 	idx, idx0 = max(p1, p2), min(p1, p2)
 	if idx0==0:
 		##idx decremented by 1 because there is no orbit 0
+		rp=orbits[idx-1].a*(1-orbits[idx-1].e)
+		rg=sim[0].particles[0].m*(cgs.G*cgs.M_sun/cgs.c**2.0/cgs.pc)
 		name=sim[0].simulationarchive_filename.decode('utf-8')
 		f=open(name.replace('.bin', '_tde'), 'a+')
-		f.write('{0} {1} {2} {3} TDE!\n'.format(sim[0].t, orbits[idx-1].a, orbits[idx-1].e, idx))
+		if rp<10.0*rg:
+			sim[0].remove(idx)
+			return 0
+		f.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim[0].t, orbits[idx-1].a, orbits[idx-1].e, orbits[idx-1].inc,\
+			orbits[idx-1].omega, orbits[idx-1].Omega, sim[0].particles[idx].hash, sim[0].particles[idx].m))
 		f.close()
 
 	return 0
@@ -152,7 +158,7 @@ def main():
 	sim.G = 1.	
 	##Central object
 	rt=config.getfloat('params', 'rt')	
-	sim.add(m = 4e6, r=rt) 
+	sim.add(m = 4e6, r=rt, hash="smbh") 
 	sim.gravity=config.get('params', 'gravity')
 	sim.integrator=config.get('params', 'integrator')
 	dt=config.getfloat('params', 'dt')
@@ -201,7 +207,7 @@ def main():
 			M = rand.uniform(0., 2.*np.pi)
 			# print(m, (sim.particles[0].m/m)**(1./3.)*0.1*cgs.au/cgs.pc)
 			sim.add(m = m, a = a0, e = e, inc=inc, Omega = Omega, omega = omega, M = M, primary=sim.particles[0],\
-				r=0)
+				r=0, hash=str(l))
 		##Indices of each component
 		nparts[ss]=(N0,N0+N-1)
 	
@@ -289,6 +295,7 @@ def main():
 			sim.particles[ii].vx, sim.particles[ii].vy, sim.particles[ii].vz, sim.particles[ii].m))
 	f.close()
 
+	print(sim.particles[1].hash)
 	while(t<pRun):
 		orbits=sim.calculate_orbits(primary=sim.particles[0])
 		np.savetxt(loc+name.replace('.bin', '_out_{0}.dat'.format(orb_idx)), [[oo.a, oo.e, oo.inc, oo.Omega, oo.omega, oo.f] for oo in orbits])

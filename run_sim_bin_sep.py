@@ -100,9 +100,9 @@ def bin_sep(sim, reb_coll):
 		rg=4.0e6*(cgs.G*cgs.M_sun/cgs.c**2.0/cgs.pc)
 		##Remove plunging orbits...
 		# print(rp<10.0*rg)
-		# if rp<10.0*rg:
-		# 	sim[0].remove(idx)
-		# 	return 0
+		if rp<10.0*rg:
+			sim[0].remove(idx)
+			return 0
 		e_new=1.0-rp/a_new
 		##Also remove TDEs
 		sim[0].add(a=a_new, e=e_new, inc=orbits[idx-1].inc,\
@@ -112,7 +112,8 @@ def bin_sep(sim, reb_coll):
 		# sim[0].remove(idx)
 
 		f=open(name.replace('.bin', '_tde'), 'a+')
-		f.write('{0} {1} {2} {3} TDE!\n'.format(sim[0].t, orbits[idx-1].a, orbits[idx-1].e, idx))
+		f.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim[0].t, orbits[idx-1].a, orbits[idx-1].e, orbits[idx-1].inc,\
+			orbits[idx-1].omega, orbits[idx-1].Omega, sim[0].particles[idx].hash, sim[0].particles[idx].m))
 		f.close()
 
 	return 0
@@ -182,7 +183,7 @@ def main():
 	sim.G = 1.	
 	##Central object
 	rt=config.getfloat('params', 'rt')	
-	sim.add(m = 4e6, r=0) 
+	sim.add(m = 4e6, r=rt, hash="smbh") 
 	sim.gravity=config.get('params', 'gravity')
 	sim.integrator=config.get('params', 'integrator')
 	dt=config.getfloat('params', 'dt')
@@ -231,7 +232,7 @@ def main():
 			M = rand.uniform(0., 2.*np.pi)
 			# print(m, (sim.particles[0].m/m)**(1./3.)*0.1*cgs.au/cgs.pc)
 			sim.add(m = m, a = a0, e = e, inc=inc, Omega = Omega, omega = omega, M = M, primary=sim.particles[0],\
-				r=rt)
+				r=0, hash=str(l))
 		##Indices of each component
 		nparts[ss]=(N0,N0+N-1)
 	
@@ -301,7 +302,7 @@ def main():
 	##Set up simulation archive for output
 	# sa = rebound.SimulationArchive(loc+name, rebxfilename='rebx.bin')
 	sim.automateSimulationArchive(loc+name,interval=pOut*pRun,deletefile=True)
-	# sim.heartbeat=heartbeat
+	sim.heartbeat=heartbeat
 	sim.move_to_com()
 	sim.simulationarchive_snapshot(loc+name)
 	bc.bash_command('cp {0} {1}'.format(config_file, loc))
@@ -318,10 +319,10 @@ def main():
 		f.write('{0:.16e} {1:.16e} {2:.16e} {3:.16e} {4:.16e} {5:.16e} {6:.16e}\n'.format(sim.particles[ii].x, sim.particles[ii].y, sim.particles[ii].z,\
 			sim.particles[ii].vx, sim.particles[ii].vy, sim.particles[ii].vz, sim.particles[ii].m))
 	f.close()
-
+	# print("N_active: ", sim.N_active)
 	while(t<pRun):
 		orbits=sim.calculate_orbits(primary=sim.particles[0])
-		ms=[pp.m for pp in sim.particles[1:]]
+		# ms=[pp.m for pp in sim.particles[1:]]
 		np.savetxt(loc+name.replace('.bin', '_out_{0}.dat'.format(orb_idx)), [[oo.a, oo.e, oo.inc, oo.Omega, oo.omega, oo.f, ms[jj]] for jj,oo in enumerate(orbits)])
 		sim.integrate(sim.t+delta_t)
 		t+=delta_t
