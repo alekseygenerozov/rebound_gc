@@ -296,6 +296,7 @@ def main():
 	f.close()
 
 	print(sim.particles[1].hash)
+	print(sim.integrator, sim.dt)
 	while(t<pRun):
 		orbits=sim.calculate_orbits(primary=sim.particles[0])
 		np.savetxt(loc+name.replace('.bin', '_out_{0}.dat'.format(orb_idx)), [[oo.a, oo.e, oo.inc, oo.Omega, oo.omega, oo.f] for oo in orbits])

@@ -319,10 +319,10 @@ def main():
 		f.write('{0:.16e} {1:.16e} {2:.16e} {3:.16e} {4:.16e} {5:.16e} {6:.16e}\n'.format(sim.particles[ii].x, sim.particles[ii].y, sim.particles[ii].z,\
 			sim.particles[ii].vx, sim.particles[ii].vy, sim.particles[ii].vz, sim.particles[ii].m))
 	f.close()
-	# print("N_active: ", sim.N_active)
+	print(sim.integrator, sim.dt)
 	while(t<pRun):
 		orbits=sim.calculate_orbits(primary=sim.particles[0])
-		# ms=[pp.m for pp in sim.particles[1:]]
+		ms=[pp.m for pp in sim.particles[1:]]
 		np.savetxt(loc+name.replace('.bin', '_out_{0}.dat'.format(orb_idx)), [[oo.a, oo.e, oo.inc, oo.Omega, oo.omega, oo.f, ms[jj]] for jj,oo in enumerate(orbits)])
 		sim.integrate(sim.t+delta_t)
 		t+=delta_t
