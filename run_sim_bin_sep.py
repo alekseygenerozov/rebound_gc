@@ -105,6 +105,7 @@ def bin_sep(sim, reb_coll):
 			return 0
 		e_new=1.0-rp/a_new
 		##Also remove TDEs
+		sim[0].particles[idx].r=0
 		sim[0].add(a=a_new, e=e_new, inc=orbits[idx-1].inc,\
 		 omega=orbits[idx-1].omega, Omega=orbits[idx-1].Omega,\
 		 M=orbits[idx-1].M, m=0, r=0, primary=sim[0].particles[0])
@@ -157,7 +158,7 @@ def main():
 		'a_min':'0.05', 'a_max':'0.5', 'ang1_mean':'0', 'ang2_mean':'0', 'ang3_mean':'0', 'ang1':'2.',\
 		 'ang2':'2.', 'ang3':'2.', 'keep_bins':'False', 'coll':'line', 'pRun':'0.1', 'pOut':'0.1', 
 		'p':'1', 'frac':'2.5e-3', 'outDir':'./', 'gr':'True', 'rinf':'4.0', 'alpha':'1.5',
-		'rt':'3.57e-5', 'mf':"mfixed", 'merge':'False'}, dict_type=OrderedDict)
+		'rt':'3.57e-5', 'mf':"mfixed", 'merge':'False', 'min_dt':'0'}, dict_type=OrderedDict)
 	# config.optionxform=str
 	config.read(config_file)
 
@@ -169,7 +170,7 @@ def main():
 	pRun=config.getfloat('params', 'pRun')
 	pOut=config.getfloat('params', 'pOut')
 	keep_bins=config.getboolean('params', 'keep_bins')
-	# rt=config.getfloat('params', 'rt')
+	rt=config.getfloat('params', 'rt')
 	coll=config.get('params', 'coll')
 	gr=config.getboolean('params', 'gr')
 	rinf=config.getfloat('params', 'rinf')
@@ -182,10 +183,11 @@ def main():
 	sim = rebound.Simulation()
 	sim.G = 1.	
 	##Central object
-	rt=config.getfloat('params', 'rt')	
-	sim.add(m = 4e6, r=rt, hash="smbh") 
+	sim.add(m = 4e6, r=0, hash="smbh") 
 	sim.gravity=config.get('params', 'gravity')
 	sim.integrator=config.get('params', 'integrator')
+	min_dt=config.getfloat('params', 'min_dt')
+	sim.ri_ias15.min_dt=min_dt
 	dt=config.getfloat('params', 'dt')
 	if dt:
 		sim.dt=dt
@@ -232,7 +234,7 @@ def main():
 			M = rand.uniform(0., 2.*np.pi)
 			# print(m, (sim.particles[0].m/m)**(1./3.)*0.1*cgs.au/cgs.pc)
 			sim.add(m = m, a = a0, e = e, inc=inc, Omega = Omega, omega = omega, M = M, primary=sim.particles[0],\
-				r=0, hash=str(l))
+				r=rt, hash=str(l))
 		##Indices of each component
 		nparts[ss]=(N0,N0+N-1)
 	
