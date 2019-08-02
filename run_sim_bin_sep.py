@@ -108,7 +108,7 @@ def bin_sep(sim, reb_coll):
 		sim[0].particles[idx].r=0
 		sim[0].add(a=a_new, e=e_new, inc=orbits[idx-1].inc,\
 		 omega=orbits[idx-1].omega, Omega=orbits[idx-1].Omega,\
-		 M=orbits[idx-1].M, m=0, r=0, primary=sim[0].particles[0])
+		 M=orbits[idx-1].M+np.pi/2.0, m=0, r=0, primary=sim[0].particles[0])
 		sim[0].N_active=(len(sim[0].particles)-1)
 		# sim[0].remove(idx)
 
