@@ -134,7 +134,7 @@ def main():
 		'a_min':'0.05', 'a_max':'0.5', 'ang1_mean':'0', 'ang2_mean':'0', 'ang3_mean':'0', 'ang1':'2.',\
 		 'ang2':'2.', 'ang3':'2.', 'keep_bins':'False', 'coll':'line', 'pRun':'0.1', 'pOut':'0.1', 
 		'p':'1', 'frac':'2.5e-3', 'outDir':'./', 'gr':'True', 'rinf':'4.0', 'alpha':'1.5',
-		'rt':'3.57e-5', 'mf':"mfixed", 'merge':'False'}, dict_type=OrderedDict)
+		'rt':'1e-4', 'mf':"mfixed", 'merge':'False'}, dict_type=OrderedDict)
 	# config.optionxform=str
 	config.read(config_file)
 
