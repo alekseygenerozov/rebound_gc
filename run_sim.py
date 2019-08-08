@@ -99,10 +99,12 @@ def get_tde(sim, reb_coll):
 		f=open(name.replace('.bin', '_tde'), 'a+')
 		if rp<10.0*rg:
 			sim[0].remove(idx)
+			sim.move_to_com()
 			return 0
 		f.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim[0].t, orbits[idx-1].a, orbits[idx-1].e, orbits[idx-1].inc,\
 			orbits[idx-1].omega, orbits[idx-1].Omega, sim[0].particles[idx].hash, sim[0].particles[idx].m))
 		f.close()
+		sim.move_to_com()
 
 	return 0
 
@@ -300,6 +302,7 @@ def main():
 	while(t<pRun):
 		orbits=sim.calculate_orbits(primary=sim.particles[0])
 		np.savetxt(loc+name.replace('.bin', '_out_{0}.dat'.format(orb_idx)), [[oo.a, oo.e, oo.inc, oo.Omega, oo.omega, oo.f] for oo in orbits])
+		sim.move_to_com()
 		sim.integrate(sim.t+delta_t)
 		t+=delta_t
 		orb_idx+=1
