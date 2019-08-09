@@ -134,7 +134,7 @@ def main():
 		'a_min':'0.05', 'a_max':'0.5', 'ang1_mean':'0', 'ang2_mean':'0', 'ang3_mean':'0', 'ang1':'2.',\
 		 'ang2':'2.', 'ang3':'2.', 'keep_bins':'False', 'coll':'line', 'pRun':'0.1', 'pOut':'0.1', 
 		'p':'1', 'frac':'2.5e-3', 'outDir':'./', 'gr':'True', 'rinf':'4.0', 'alpha':'1.5',
-		'rt':'1e-4', 'mf':"mfixed", 'merge':'False'}, dict_type=OrderedDict)
+		'rt':'1e-4', 'mf':"mfixed", 'merge':'False', 'menc_comp':'False'}, dict_type=OrderedDict)
 	# config.optionxform=str
 	config.read(config_file)
 
@@ -151,6 +151,7 @@ def main():
 	gr=config.getboolean('params', 'gr')
 	rinf=config.getfloat('params', 'rinf')
 	alpha=config.getfloat('params', 'alpha')
+	menc_comp=config.getboolean('params', 'menc_comp')
 
 	#print pRun, pOut, rt, coll
 	sections=config.sections()
@@ -267,7 +268,11 @@ def main():
 	##Stellar potential
 	rebx = reboundx.Extras(sim)
 	if rinf>0:
-		menc=rebx.add("menc")
+		if menc_comp:
+			print("test!")
+			menc=rebx.add("menc_comp")
+		else:
+			menc=rebx.add("menc")
 		menc.params["rinf"]=rinf
 		menc.params["alpha"]=alpha
 	##GR effects
@@ -299,13 +304,16 @@ def main():
 
 	print(sim.particles[1].hash)
 	print(sim.integrator, sim.dt)
+	##Period at the inner edge of the disk
+	p_in=2.0*np.pi*(0.05**3.0/4.0e6)**0.5
 	while(t<pRun):
-		orbits=sim.calculate_orbits(primary=sim.particles[0])
-		np.savetxt(loc+name.replace('.bin', '_out_{0}.dat'.format(orb_idx)), [[oo.a, oo.e, oo.inc, oo.Omega, oo.omega, oo.f] for oo in orbits])
+		if t>=orb_idx*delta_t:
+			orbits=sim.calculate_orbits(primary=sim.particles[0])
+			np.savetxt(loc+name.replace('.bin', '_out_{0}.dat'.format(orb_idx)), [[oo.a, oo.e, oo.inc, oo.Omega, oo.omega, oo.f] for oo in orbits])
+			orb_idx+=1
 		sim.move_to_com()
-		sim.integrate(sim.t+delta_t)
+		sim.integrate(sim.t+p_in)
 		t+=delta_t
-		orb_idx+=1
 
 
 
