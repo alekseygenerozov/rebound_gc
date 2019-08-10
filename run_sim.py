@@ -313,7 +313,8 @@ def main():
 			orb_idx+=1
 		sim.move_to_com()
 		sim.integrate(sim.t+p_in)
-		t+=delta_t
+		##Should increment line below by pin not deltat
+		t+=p_in
 
 
 
