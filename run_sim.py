@@ -87,6 +87,23 @@ def heartbeat(sim):
 # See ctypes documentation for details.
 	# print(sim.contents.dt)
 
+def get_tde_no_delR(sim, reb_coll):
+	orbits = sim[0].calculate_orbits(primary=sim[0].particles[0])
+	p1,p2 = reb_coll.p1, reb_coll.p2
+	idx, idx0 = max(p1, p2), min(p1, p2)
+	if idx0==0:
+		##idx decremented by 1 because there is no orbit 0
+		rp=orbits[idx-1].a*(1-orbits[idx-1].e)
+		rg=sim[0].particles[0].m*(cgs.G*cgs.M_sun/cgs.c**2.0/cgs.pc)
+		name=sim[0].simulationarchive_filename.decode('utf-8')
+		f=open(name.replace('.bin', '_tde'), 'a+')
+		f.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim[0].t, orbits[idx-1].a, orbits[idx-1].e, orbits[idx-1].inc,\
+			orbits[idx-1].omega, orbits[idx-1].Omega, sim[0].particles[idx].hash, sim[0].particles[idx].m))
+		f.close()
+		sim.move_to_com()
+
+	return 0
+
 def get_tde(sim, reb_coll):
 	orbits = sim[0].calculate_orbits(primary=sim[0].particles[0])
 	p1,p2 = reb_coll.p1, reb_coll.p2
@@ -134,7 +151,8 @@ def main():
 		'a_min':'0.05', 'a_max':'0.5', 'ang1_mean':'0', 'ang2_mean':'0', 'ang3_mean':'0', 'ang1':'2.',\
 		 'ang2':'2.', 'ang3':'2.', 'keep_bins':'False', 'coll':'line', 'pRun':'0.1', 'pOut':'0.1', 
 		'p':'1', 'frac':'2.5e-3', 'outDir':'./', 'gr':'True', 'rinf':'4.0', 'alpha':'1.5',
-		'rt':'1e-4', 'mf':"mfixed", 'merge':'False', 'menc_comp':'False'}, dict_type=OrderedDict)
+		'rt':'1e-4', 'mf':"mfixed", 'merge':'False', 'menc_comp':'False', 'Mbh':'4e6'
+		'c':'4571304.57795483', 'delR':'True'}, dict_type=OrderedDict)
 	# config.optionxform=str
 	config.read(config_file)
 
@@ -152,6 +170,7 @@ def main():
 	rinf=config.getfloat('params', 'rinf')
 	alpha=config.getfloat('params', 'alpha')
 	menc_comp=config.getboolean('params', 'menc_comp')
+	Mbh=config.getfloat('params', 'Mbh')
 
 	#print pRun, pOut, rt, coll
 	sections=config.sections()
@@ -161,7 +180,7 @@ def main():
 	sim.G = 1.	
 	##Central object
 	rt=config.getfloat('params', 'rt')	
-	sim.add(m = 4e6, r=rt, hash="smbh") 
+	sim.add(m = Mbh, r=rt, hash="smbh") 
 	sim.gravity=config.get('params', 'gravity')
 	sim.integrator=config.get('params', 'integrator')
 	dt=config.getfloat('params', 'dt')
@@ -258,9 +277,12 @@ def main():
 	print(np.sum(ms))
 	sim.collision=coll
 	sim.collision_resolve=get_tde
+	delR=config.getboolean('params', 'delR')
 	merge=config.getboolean('params', 'merge')
 	if merge:
 		sim.collision_resolve='merge'
+	if not delR:
+		sim.collision_resolve=get_tde_no_delR
 	print("gr:", gr, "rinf:", rinf, "alpha:", alpha, "merge:", merge)
 
 
@@ -279,7 +301,7 @@ def main():
 	if gr:
 		gr=rebx.add("gr")
 		##Speed of light in simulation units.
-		gr.params["c"]=4571304.57795483
+		gr.params["c"]=config.getfloat('params', 'c')
 
 	##Set up simulation archive for output
 	# sa = rebound.SimulationArchive(loc+name, rebxfilename='rebx.bin')
@@ -305,7 +327,7 @@ def main():
 	print(sim.particles[1].hash)
 	print(sim.integrator, sim.dt)
 	##Period at the inner edge of the disk
-	p_in=2.0*np.pi*(0.05**3.0/4.0e6)**0.5
+	p_in=2.0*np.pi*(a_min**3.0/Mbh)**0.5
 	while(t<pRun):
 		if t>=orb_idx*delta_t:
 			orbits=sim.calculate_orbits(primary=sim.particles[0])
