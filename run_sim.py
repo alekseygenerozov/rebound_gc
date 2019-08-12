@@ -151,8 +151,8 @@ def main():
 		'a_min':'0.05', 'a_max':'0.5', 'ang1_mean':'0', 'ang2_mean':'0', 'ang3_mean':'0', 'ang1':'2.',\
 		 'ang2':'2.', 'ang3':'2.', 'keep_bins':'False', 'coll':'line', 'pRun':'0.1', 'pOut':'0.1', 
 		'p':'1', 'frac':'2.5e-3', 'outDir':'./', 'gr':'True', 'rinf':'4.0', 'alpha':'1.5',
-		'rt':'1e-4', 'mf':"mfixed", 'merge':'False', 'menc_comp':'False', 'Mbh':'4e6'
-		'c':'4571304.57795483', 'delR':'True'}, dict_type=OrderedDict)
+		'rt':'1e-4', 'mf':"mfixed", 'merge':'False', 'menc_comp':'False', 'Mbh':'4e6',
+		'c':'4571304.57795483', 'delR':'True', 'epsilon':'1e-9'}, dict_type=OrderedDict)
 	# config.optionxform=str
 	config.read(config_file)
 
@@ -183,6 +183,8 @@ def main():
 	sim.add(m = Mbh, r=rt, hash="smbh") 
 	sim.gravity=config.get('params', 'gravity')
 	sim.integrator=config.get('params', 'integrator')
+	epsilon=config.get('params', 'epsilon')
+	sim.ri_ias15.epsilon=epsilon
 	dt=config.getfloat('params', 'dt')
 	if dt:
 		sim.dt=dt
@@ -282,6 +284,7 @@ def main():
 	if merge:
 		sim.collision_resolve='merge'
 	if not delR:
+		print('delR:', delR)
 		sim.collision_resolve=get_tde_no_delR
 	print("gr:", gr, "rinf:", rinf, "alpha:", alpha, "merge:", merge)
 
