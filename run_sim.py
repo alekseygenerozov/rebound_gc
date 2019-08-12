@@ -183,7 +183,7 @@ def main():
 	sim.add(m = Mbh, r=rt, hash="smbh") 
 	sim.gravity=config.get('params', 'gravity')
 	sim.integrator=config.get('params', 'integrator')
-	epsilon=config.get('params', 'epsilon')
+	epsilon=config.getfloat('params', 'epsilon')
 	sim.ri_ias15.epsilon=epsilon
 	dt=config.getfloat('params', 'dt')
 	if dt:
