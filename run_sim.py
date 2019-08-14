@@ -293,11 +293,12 @@ def main():
 	##Stellar potential
 	rebx = reboundx.Extras(sim)
 	if rinf>0:
-		if menc_comp:
-			print("test!")
-			menc=rebx.add("menc_comp")
-		else:
-			menc=rebx.add("menc")
+		menc=rebx.add("modify_orbits_merritt")
+		# if menc_comp:
+		# 	print("test!")
+		# 	menc=rebx.add("menc_comp")
+		# else:
+		# 	menc=rebx.add("menc")
 		menc.params["rinf"]=rinf
 		menc.params["alpha"]=alpha
 	##GR effects

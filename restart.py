@@ -1,8 +1,14 @@
-import rebound
+import configparser
+import argparse
+from collections import OrderedDict
+
 import sys
 import numpy as np
 from run_sim import get_tde, get_tde_no_delR, heartbeat
+from bash_command import bash_command as bc
 
+import rebound
+import reboundx
 
 def main():
 	parser=argparse.ArgumentParser(
@@ -27,6 +33,7 @@ def main():
 		'p':'1', 'frac':'2.5e-3', 'outDir':'./', 'gr':'True', 'rinf':'4.0', 'alpha':'1.5',
 		'rt':'1e-4', 'mf':"mfixed", 'merge':'False', 'menc_comp':'False', 'Mbh':'4e6',
 		'c':'4571304.57795483', 'delR':'True'}, dict_type=OrderedDict)
+	config.read(config_file)
 
 	##Name of our put file 
 	name=config.get('params', 'name')
@@ -41,10 +48,12 @@ def main():
 	alpha=config.getfloat('params', 'alpha')
 	menc_comp=config.getboolean('params', 'menc_comp')
 	Mbh=config.getfloat('params', 'Mbh')
-	a_min=config.getfloat(ss, 'a_min')
+	sections=config.sections()
+	sections=sections[1:]
 
+	a_min=config.getfloat(sections[0], 'a_min')
 
-	sim=rebound.from_archive(loc+'/archive.bin')
+	sim=rebound.Simulation(loc+'/archive.bin', -1)
 	sim.heartbeat=heartbeat
 	sim.collision=coll
 	sim.collision_resolve=get_tde
@@ -59,7 +68,6 @@ def main():
 	rebx = reboundx.Extras(sim)
 	if rinf>0:
 		if menc_comp:
-			print("test!")
 			menc=rebx.add("menc_comp")
 		else:
 			menc=rebx.add("menc")
@@ -72,15 +80,20 @@ def main():
 		gr.params["c"]=config.getfloat('params', 'c')
 	sim.automateSimulationArchive(loc+name,interval=pOut*pRun,deletefile=False)
 	p_in=2.0*np.pi*(a_min**3.0/Mbh)**0.5
+	delta_t=0.01*pRun
+	t=sim.t
+	orb_idx=int(t/(delta_t))
+
 	while(t<pRun):
-		if t>=orb_idx*delta_t:
-			orbits=sim.calculate_orbits(primary=sim.particles[0])
-			np.savetxt(loc+name.replace('.bin', '_out_{0}.dat'.format(orb_idx)), [[oo.a, oo.e, oo.inc, oo.Omega, oo.omega, oo.f] for oo in orbits])
-			orb_idx+=1
+		# if t>=orb_idx*delta_t:
 		sim.move_to_com()
 		sim.integrate(sim.t+p_in)
-		##Should increment line below by pin not deltat
+		orb_idx+=1
+		orbits=sim.calculate_orbits(primary=sim.particles[0])
+		np.savetxt(loc+name.replace('.bin', '_out_{0}.dat'.format(orb_idx)), [[oo.a, oo.e, oo.inc, oo.Omega, oo.omega, oo.f] for oo in orbits])
 		t+=p_in
 
 
 
+if __name__ == '__main__':
+	main()
