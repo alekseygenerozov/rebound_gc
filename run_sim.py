@@ -152,7 +152,7 @@ def main():
 		 'ang2':'2.', 'ang3':'2.', 'keep_bins':'False', 'coll':'line', 'pRun':'0.1', 'pOut':'0.1', 
 		'p':'1', 'frac':'2.5e-3', 'outDir':'./', 'gr':'True', 'rinf':'4.0', 'alpha':'1.5',
 		'rt':'1e-4', 'mf':"mfixed", 'merge':'False', 'menc_comp':'False', 'Mbh':'4e6',
-		'c':'4571304.57795483', 'delR':'True', 'epsilon':'1e-9'}, dict_type=OrderedDict)
+		'c':'4571304.57795483', 'delR':'True', 'epsilon':'1e-9', 'menc_coords_primary':'False'}, dict_type=OrderedDict)
 	# config.optionxform=str
 	config.read(config_file)
 
@@ -170,6 +170,7 @@ def main():
 	rinf=config.getfloat('params', 'rinf')
 	alpha=config.getfloat('params', 'alpha')
 	menc_comp=config.getboolean('params', 'menc_comp')
+	menc_coords_primary=config.getboolean('params', 'menc_coords_primary')
 	Mbh=config.getfloat('params', 'Mbh')
 
 	#print pRun, pOut, rt, coll
@@ -292,9 +293,12 @@ def main():
 	
 	##Stellar potential
 	rebx = reboundx.Extras(sim)
+	ps=sim.particles
+	ps[0].params["primary"]=1
 	if rinf>0:
 		menc=rebx.add("modify_orbits_merritt")
-		# if menc_comp:
+		if menc_coords_primary:
+			menc.params["coordinates"]=reboundx.coordinates["PARTICLE"]
 		# 	print("test!")
 		# 	menc=rebx.add("menc_comp")
 		# else:
