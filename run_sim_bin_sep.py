@@ -87,6 +87,34 @@ def heartbeat(sim):
 # See ctypes documentation for details.
 	# print(sim.contents.dt)
 
+def bin_sep_no_delR(sim, reb_coll):
+	orbits = sim[0].calculate_orbits(primary=sim[0].particles[0])
+	p1,p2 = reb_coll.p1, reb_coll.p2
+	idx, idx0 = max(p1, p2), min(p1, p2)
+	if idx0==0:
+		##idx decremented by 1 because there is no orbit 0
+		name=sim[0].simulationarchive_filename.decode('utf-8')
+		##Generalize this later...
+		a_new=0.01
+		rp=orbits[idx-1].a*(1-orbits[idx-1].e)
+		rg=4.0e6*(cgs.G*cgs.M_sun/cgs.c**2.0/cgs.pc)
+		##Remove plunging orbits...
+		# print(rp<10.0*rg)
+		e_new=1.0-rp/a_new
+		##Also remove TDEs
+		sim[0].remove(idx)
+		sim[0].add(a=a_new, e=e_new, inc=orbits[idx-1].inc,\
+		 omega=orbits[idx-1].omega, Omega=orbits[idx-1].Omega,\
+		 M=orbits[idx-1].M+np.pi/2.0, m=0, r=0, primary=sim[0].particles[0])
+		sim[0].N_active=(len(sim[0].particles)-1)
+		# sim[0].remove(idx)
+
+		f=open(name.replace('.bin', '_tde'), 'a+')
+		f.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim[0].t, orbits[idx-1].a, orbits[idx-1].e, orbits[idx-1].inc,\
+			orbits[idx-1].omega, orbits[idx-1].Omega, sim[0].particles[idx].hash, sim[0].particles[idx].m))
+		f.close()
+
+
 def bin_sep(sim, reb_coll):
 	orbits = sim[0].calculate_orbits(primary=sim[0].particles[0])
 	p1,p2 = reb_coll.p1, reb_coll.p2
@@ -105,7 +133,7 @@ def bin_sep(sim, reb_coll):
 			return 0
 		e_new=1.0-rp/a_new
 		##Also remove TDEs
-		sim[0].particles[idx].r=0
+		sim[0].remove(idx)
 		sim[0].add(a=a_new, e=e_new, inc=orbits[idx-1].inc,\
 		 omega=orbits[idx-1].omega, Omega=orbits[idx-1].Omega,\
 		 M=orbits[idx-1].M+np.pi/2.0, m=0, r=0, primary=sim[0].particles[0])
@@ -133,7 +161,7 @@ def get_tde(sim, reb_coll):
 	return 0
 
 def main():
-	parser=argparse.ArgumentParser(
+parser=argparse.ArgumentParser(
 		description='Set up a rebound run')
 	parser.add_argument('--config', nargs=1, default='config',
 		help='File containing simulation parameters')
@@ -158,7 +186,8 @@ def main():
 		'a_min':'0.05', 'a_max':'0.5', 'ang1_mean':'0', 'ang2_mean':'0', 'ang3_mean':'0', 'ang1':'2.',\
 		 'ang2':'2.', 'ang3':'2.', 'keep_bins':'False', 'coll':'line', 'pRun':'0.1', 'pOut':'0.1', 
 		'p':'1', 'frac':'2.5e-3', 'outDir':'./', 'gr':'True', 'rinf':'4.0', 'alpha':'1.5',
-		'rt':'3.57e-5', 'mf':"mfixed", 'merge':'False', 'min_dt':'0'}, dict_type=OrderedDict)
+		'rt':'1e-4', 'mf':"mfixed", 'merge':'False', 'menc_comp':'False', 'Mbh':'4e6',
+		'c':'4571304.57795483', 'delR':'True', 'epsilon':'1e-9', 'menc_coords_primary':'False'}, dict_type=OrderedDict)
 	# config.optionxform=str
 	config.read(config_file)
 
@@ -170,11 +199,14 @@ def main():
 	pRun=config.getfloat('params', 'pRun')
 	pOut=config.getfloat('params', 'pOut')
 	keep_bins=config.getboolean('params', 'keep_bins')
-	rt=config.getfloat('params', 'rt')
+	# rt=config.getfloat('params', 'rt')
 	coll=config.get('params', 'coll')
 	gr=config.getboolean('params', 'gr')
 	rinf=config.getfloat('params', 'rinf')
 	alpha=config.getfloat('params', 'alpha')
+	menc_comp=config.getboolean('params', 'menc_comp')
+	menc_coords_primary=config.getboolean('params', 'menc_coords_primary')
+	Mbh=config.getfloat('params', 'Mbh')
 
 	#print pRun, pOut, rt, coll
 	sections=config.sections()
@@ -183,11 +215,12 @@ def main():
 	sim = rebound.Simulation()
 	sim.G = 1.	
 	##Central object
-	sim.add(m = 4e6, r=0, hash="smbh") 
+	rt=config.getfloat('params', 'rt')	
+	sim.add(m = Mbh, r=rt, hash="smbh") 
 	sim.gravity=config.get('params', 'gravity')
 	sim.integrator=config.get('params', 'integrator')
-	min_dt=config.getfloat('params', 'min_dt')
-	sim.ri_ias15.min_dt=min_dt
+	epsilon=config.getfloat('params', 'epsilon')
+	sim.ri_ias15.epsilon=epsilon
 	dt=config.getfloat('params', 'dt')
 	if dt:
 		sim.dt=dt
@@ -234,7 +267,7 @@ def main():
 			M = rand.uniform(0., 2.*np.pi)
 			# print(m, (sim.particles[0].m/m)**(1./3.)*0.1*cgs.au/cgs.pc)
 			sim.add(m = m, a = a0, e = e, inc=inc, Omega = Omega, omega = omega, M = M, primary=sim.particles[0],\
-				r=rt, hash=str(l))
+				r=0, hash=str(l))
 		##Indices of each component
 		nparts[ss]=(N0,N0+N-1)
 	
@@ -282,24 +315,36 @@ def main():
 	print(np.sum(ms))
 	sim.collision=coll
 	sim.collision_resolve=bin_sep
-	# merge=config.getboolean('params', 'merge')
-	# if merge:
-	# 	sim.collision_resolve='merge'
-	print("gr:", gr, "rinf:", rinf, "alpha:", alpha)
+	delR=config.getboolean('params', 'delR')
+	merge=config.getboolean('params', 'merge')
+	if merge:
+		sim.collision_resolve='merge'
+	if not delR:
+		print('delR:', delR)
+		sim.collision_resolve=bin_sep_no_delR
+	print("gr:", gr, "rinf:", rinf, "alpha:", alpha, "merge:", merge)
 
 
 	
 	##Stellar potential
 	rebx = reboundx.Extras(sim)
+	ps=sim.particles
+	ps[0].params["primary"]=1
 	if rinf>0:
-		menc=rebx.add("menc")
+		if menc_comp:
+			menc=rebx.add("menc_comp")
+		else:
+			menc=rebx.add("menc")
+			menc.params["rinf"]=rinf
+			menc.params["alpha"]=alpha
+
 		menc.params["rinf"]=rinf
 		menc.params["alpha"]=alpha
 	##GR effects
 	if gr:
 		gr=rebx.add("gr")
 		##Speed of light in simulation units.
-		gr.params["c"]=4571304.57795483
+		gr.params["c"]=config.getfloat('params', 'c')
 
 	##Set up simulation archive for output
 	# sa = rebound.SimulationArchive(loc+name, rebxfilename='rebx.bin')
@@ -321,14 +366,20 @@ def main():
 		f.write('{0:.16e} {1:.16e} {2:.16e} {3:.16e} {4:.16e} {5:.16e} {6:.16e}\n'.format(sim.particles[ii].x, sim.particles[ii].y, sim.particles[ii].z,\
 			sim.particles[ii].vx, sim.particles[ii].vy, sim.particles[ii].vz, sim.particles[ii].m))
 	f.close()
+
+	print(sim.particles[1].hash)
 	print(sim.integrator, sim.dt)
+	##Period at the inner edge of the disk
+	p_in=2.0*np.pi*(a_min**3.0/Mbh)**0.5
 	while(t<pRun):
-		orbits=sim.calculate_orbits(primary=sim.particles[0])
-		ms=[pp.m for pp in sim.particles[1:]]
-		np.savetxt(loc+name.replace('.bin', '_out_{0}.dat'.format(orb_idx)), [[oo.a, oo.e, oo.inc, oo.Omega, oo.omega, oo.f, ms[jj]] for jj,oo in enumerate(orbits)])
-		sim.integrate(sim.t+delta_t)
-		t+=delta_t
-		orb_idx+=1
+		if t>=orb_idx*delta_t:
+			orbits=sim.calculate_orbits(primary=sim.particles[0])
+			np.savetxt(loc+name.replace('.bin', '_out_{0}.dat'.format(orb_idx)), [[oo.a, oo.e, oo.inc, oo.Omega, oo.omega, oo.f] for oo in orbits])
+			orb_idx+=1
+		sim.move_to_com()
+		sim.integrate(sim.t+p_in)
+		##Should increment line below by pin not deltat
+		t+=p_in
 
 
 
@@ -337,6 +388,10 @@ def main():
 
 if __name__ == '__main__':
 	main()
+
+
+
+
 
 
 
