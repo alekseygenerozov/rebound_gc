@@ -161,7 +161,7 @@ def get_tde(sim, reb_coll):
 	return 0
 
 def main():
-parser=argparse.ArgumentParser(
+	parser=argparse.ArgumentParser(
 		description='Set up a rebound run')
 	parser.add_argument('--config', nargs=1, default='config',
 		help='File containing simulation parameters')
@@ -180,7 +180,7 @@ parser=argparse.ArgumentParser(
 
 	loc="trial_{0}/".format(args.index)
 	bc.bash_command('mkdir {0}'.format(loc))
-	##Default stellar parameters 
+	##Default stellar parameters False
 	config=configparser.SafeConfigParser(defaults={'name': 'archive', 'N':'100', 'e':'0.7',
 		'gravity':'compensated', 'integrator':'ias15', 'dt':'0', \
 		'a_min':'0.05', 'a_max':'0.5', 'ang1_mean':'0', 'ang2_mean':'0', 'ang3_mean':'0', 'ang1':'2.',\
