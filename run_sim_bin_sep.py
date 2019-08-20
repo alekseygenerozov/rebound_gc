@@ -216,7 +216,7 @@ def main():
 	sim.G = 1.	
 	##Central object
 	rt=config.getfloat('params', 'rt')	
-	sim.add(m = Mbh, r=rt, hash="smbh") 
+	sim.add(m = Mbh, r=0, hash="smbh") 
 	sim.gravity=config.get('params', 'gravity')
 	sim.integrator=config.get('params', 'integrator')
 	epsilon=config.getfloat('params', 'epsilon')
@@ -267,7 +267,7 @@ def main():
 			M = rand.uniform(0., 2.*np.pi)
 			# print(m, (sim.particles[0].m/m)**(1./3.)*0.1*cgs.au/cgs.pc)
 			sim.add(m = m, a = a0, e = e, inc=inc, Omega = Omega, omega = omega, M = M, primary=sim.particles[0],\
-				r=0, hash=str(l))
+				r=rt, hash=str(l))
 		##Indices of each component
 		nparts[ss]=(N0,N0+N-1)
 	
