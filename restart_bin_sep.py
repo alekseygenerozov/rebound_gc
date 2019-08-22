@@ -41,7 +41,7 @@ def main():
 	name=config.get('params', 'outDir')+'/'+name
 	##Length of simulation and interval between snapshots
 	pRun=config.getfloat('params', 'pRun')
-	pOut=config.getfloat('params', 'pOut')
+	# pOut=config.getfloat('params', 'pOut')
 	coll=config.get('params', 'coll')
 	gr=config.getboolean('params', 'gr')
 	rinf=config.getfloat('params', 'rinf')
@@ -55,14 +55,15 @@ def main():
 
 	sim=rebound.Simulation(loc+'/archive.bin', -1)
 	sim.heartbeat=heartbeat
-	sim.collision=coll
-	sim.collision_resolve=get_tde
-	delR=config.getboolean('params', 'delR')
-	merge=config.getboolean('params', 'merge')
-	if merge:
-		sim.collision_resolve='merge'
-	if not delR:
-		sim.collision_resolve=get_tde_no_delR
+	##We don't care about subsequent TDEs for now...
+	# sim.collision=coll
+	# sim.collision_resolve=get_tde
+	# delR=config.getboolean('params', 'delR')
+	# merge=config.getboolean('params', 'merge')
+	# if merge:
+	# 	sim.collision_resolve='merge'
+	# if not delR:
+	# 	sim.collision_resolve=get_tde_no_delR
 
 	##Stellar potential
 	rebx = reboundx.Extras(sim)
