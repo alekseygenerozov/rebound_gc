@@ -10,6 +10,45 @@ from bash_command import bash_command as bc
 import rebound
 import reboundx
 
+def get_tde_no_delR(sim, reb_coll):
+	orbits = sim[0].calculate_orbits(primary=sim[0].particles[0])
+	p1,p2 = reb_coll.p1, reb_coll.p2
+	idx, idx0 = max(p1, p2), min(p1, p2)
+	if idx0==0:
+		##idx decremented by 1 because there is no orbit 0
+		rp=orbits[idx-1].a*(1-orbits[idx-1].e)
+		rg=sim[0].particles[0].m*(cgs.G*cgs.M_sun/cgs.c**2.0/cgs.pc)
+		name=sim[0].simulationarchive_filename.decode('utf-8')
+		f=open(name.replace('.bin', '_tde'), 'a+')
+		f.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim[0].t, orbits[idx-1].a, orbits[idx-1].e, orbits[idx-1].inc,\
+			orbits[idx-1].omega, orbits[idx-1].Omega, sim[0].particles[idx].hash, sim[0].particles[idx].m))
+		f.close()
+		sim.move_to_com()
+
+	return 0
+
+
+def get_tde(sim, reb_coll):
+	orbits = sim[0].calculate_orbits(primary=sim[0].particles[0])
+	p1,p2 = reb_coll.p1, reb_coll.p2
+	idx, idx0 = max(p1, p2), min(p1, p2)
+	if idx0==0:
+		##idx decremented by 1 because there is no orbit 0
+		rp=orbits[idx-1].a*(1-orbits[idx-1].e)
+		rg=sim[0].particles[0].m*(cgs.G*cgs.M_sun/cgs.c**2.0/cgs.pc)
+		name=sim[0].simulationarchive_filename.decode('utf-8')
+		f=open(name.replace('.bin', '_tde'), 'a+')
+		if rp<10.0*rg:
+			sim[0].remove(idx)
+			sim.move_to_com()
+			return 0
+		f.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim[0].t, orbits[idx-1].a, orbits[idx-1].e, orbits[idx-1].inc,\
+			orbits[idx-1].omega, orbits[idx-1].Omega, sim[0].particles[idx].hash, sim[0].particles[idx].m))
+		f.close()
+		sim.move_to_com()
+
+	return 0
+
 def main():
 	parser=argparse.ArgumentParser(
 		description='Set up a rebound run')
@@ -57,13 +96,13 @@ def main():
 	sim.heartbeat=heartbeat
 	##We don't care about subsequent TDEs for now...
 	# sim.collision=coll
-	# sim.collision_resolve=get_tde
-	# delR=config.getboolean('params', 'delR')
+	sim.collision_resolve=get_tde
+	delR=config.getboolean('params', 'delR')
 	# merge=config.getboolean('params', 'merge')
 	# if merge:
 	# 	sim.collision_resolve='merge'
-	# if not delR:
-	# 	sim.collision_resolve=get_tde_no_delR
+	if not delR:
+		sim.collision_resolve=get_tde_no_delR
 
 	##Stellar potential
 	rebx = reboundx.Extras(sim)
@@ -85,7 +124,7 @@ def main():
 	p_in=2.0*np.pi*(a_min**3.0/Mbh)**0.5
 	delta_t=0.01*pRun
 	t=sim.t
-	orb_idx=int(t/(delta_t))
+	orb_idx=int(t/(delta_t))+1
 
 	while(t<pRun):
 		# if t>=orb_idx*delta_t:
