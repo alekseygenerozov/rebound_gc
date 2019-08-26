@@ -102,6 +102,10 @@ def bin_sep_no_delR(sim, reb_coll):
 		# print(rp<10.0*rg)
 		e_new=1.0-rp/a_new
 		##Also remove TDEs
+		f=open(name.replace('.bin', '_tde'), 'a+')
+		f.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim[0].t, orbits[idx-1].a, orbits[idx-1].e, orbits[idx-1].inc,\
+			orbits[idx-1].omega, orbits[idx-1].Omega, sim[0].particles[idx].hash, sim[0].particles[idx].m))
+		f.close()
 		sim[0].remove(idx)
 		sim[0].add(a=a_new, e=e_new, inc=orbits[idx-1].inc,\
 		 omega=orbits[idx-1].omega, Omega=orbits[idx-1].Omega,\
@@ -109,10 +113,7 @@ def bin_sep_no_delR(sim, reb_coll):
 		sim[0].N_active=(len(sim[0].particles)-1)
 		# sim[0].remove(idx)
 
-		f=open(name.replace('.bin', '_tde'), 'a+')
-		f.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim[0].t, orbits[idx-1].a, orbits[idx-1].e, orbits[idx-1].inc,\
-			orbits[idx-1].omega, orbits[idx-1].Omega, sim[0].particles[idx].hash, sim[0].particles[idx].m))
-		f.close()
+
 
 
 def bin_sep(sim, reb_coll):
@@ -133,6 +134,11 @@ def bin_sep(sim, reb_coll):
 			return 0
 		e_new=1.0-rp/a_new
 		##Also remove TDEs
+		f=open(name.replace('.bin', '_tde'), 'a+')
+		f.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim[0].t, orbits[idx-1].a, orbits[idx-1].e, orbits[idx-1].inc,\
+			orbits[idx-1].omega, orbits[idx-1].Omega, sim[0].particles[idx].hash, sim[0].particles[idx].m))
+		f.close()
+
 		sim[0].remove(idx)
 		sim[0].add(a=a_new, e=e_new, inc=orbits[idx-1].inc,\
 		 omega=orbits[idx-1].omega, Omega=orbits[idx-1].Omega,\
@@ -140,10 +146,6 @@ def bin_sep(sim, reb_coll):
 		sim[0].N_active=(len(sim[0].particles)-1)
 		# sim[0].remove(idx)
 
-		f=open(name.replace('.bin', '_tde'), 'a+')
-		f.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim[0].t, orbits[idx-1].a, orbits[idx-1].e, orbits[idx-1].inc,\
-			orbits[idx-1].omega, orbits[idx-1].Omega, sim[0].particles[idx].hash, sim[0].particles[idx].m))
-		f.close()
 
 	return 0
 
