@@ -10,6 +10,7 @@ from bash_command import bash_command as bc
 import rebound
 import reboundx
 
+
 def main():
 	parser=argparse.ArgumentParser(
 		description='Set up a rebound run')
@@ -41,7 +42,7 @@ def main():
 	name=config.get('params', 'outDir')+'/'+name
 	##Length of simulation and interval between snapshots
 	pRun=config.getfloat('params', 'pRun')
-	pOut=config.getfloat('params', 'pOut')
+	# pOut=config.getfloat('params', 'pOut')
 	coll=config.get('params', 'coll')
 	gr=config.getboolean('params', 'gr')
 	rinf=config.getfloat('params', 'rinf')
@@ -55,12 +56,13 @@ def main():
 
 	sim=rebound.Simulation(loc+'/archive.bin', -1)
 	sim.heartbeat=heartbeat
-	sim.collision=coll
+	##We don't care about subsequent TDEs for now...
+	# sim.collision=coll
 	sim.collision_resolve=get_tde
 	delR=config.getboolean('params', 'delR')
-	merge=config.getboolean('params', 'merge')
-	if merge:
-		sim.collision_resolve='merge'
+	# merge=config.getboolean('params', 'merge')
+	# if merge:
+	# 	sim.collision_resolve='merge'
 	if not delR:
 		sim.collision_resolve=get_tde_no_delR
 
@@ -84,7 +86,7 @@ def main():
 	p_in=2.0*np.pi*(a_min**3.0/Mbh)**0.5
 	delta_t=0.01*pRun
 	t=sim.t
-	orb_idx=int(t/(delta_t))
+	orb_idx=int(t/(delta_t))+1
 
 	while(t<pRun):
 		# if t>=orb_idx*delta_t:
