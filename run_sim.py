@@ -342,7 +342,7 @@ def main():
 			np.savetxt(loc+name.replace('.bin', '_out_{0}.dat'.format(orb_idx)), [[oo.a, oo.e, oo.inc, oo.Omega, oo.omega, oo.f] for oo in orbits])
 			orb_idx+=1
 		sim.move_to_com()
-		sim.integrate(sim.t+0.2*p_in)
+		sim.integrate(sim.t+0.1*p_in)
 		orbits=sim.calculate_orbits(primary=sim.particles[0])
 		rps=np.array([oo.a*(1-oo.e) for oo in orbits])
 		if np.any(rps<rt):
