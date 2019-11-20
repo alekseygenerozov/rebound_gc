@@ -336,13 +336,14 @@ def main():
 	print(sim.integrator, sim.dt)
 	##Period at the inner edge of the disk
 	p_in=2.0*np.pi*(a_min**3.0/Mbh)**0.5
+	my_step=0.1*p_in
 	while(t<pRun):
 		if t>=orb_idx*delta_t:
 			orbits=sim.calculate_orbits(primary=sim.particles[0])
 			np.savetxt(loc+name.replace('.bin', '_out_{0}.dat'.format(orb_idx)), [[oo.a, oo.e, oo.inc, oo.Omega, oo.omega, oo.f] for oo in orbits])
 			orb_idx+=1
 		sim.move_to_com()
-		sim.integrate(sim.t+0.1*p_in)
+		sim.integrate(sim.t+my_step)
 		orbits=sim.calculate_orbits(primary=sim.particles[0])
 		rps=np.array([oo.a*(1-oo.e) for oo in orbits])
 		if np.any(rps<rt):
@@ -356,7 +357,7 @@ def main():
 						pp.vx, pp.vy, pp.vz, pp.hash, pp.m))
 
 		##Should increment line below by pin not deltat
-		t+=p_in
+		t+=my_step
 
 
 
