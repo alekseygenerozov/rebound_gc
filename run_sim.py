@@ -342,7 +342,19 @@ def main():
 			np.savetxt(loc+name.replace('.bin', '_out_{0}.dat'.format(orb_idx)), [[oo.a, oo.e, oo.inc, oo.Omega, oo.omega, oo.f] for oo in orbits])
 			orb_idx+=1
 		sim.move_to_com()
-		sim.integrate(sim.t+p_in)
+		sim.integrate(sim.t+0.2*p_in)
+		orbits=sim.calculate_orbits(primary=sim.particles[0])
+		rps=np.array([oo.a*(1-oo.e) for oo in orbits])
+		if np.any(rps<rt):
+			##Add 1 since central black hole is not included in rps
+			indics=np.array(range(len(rps)))[rps<rt]+1
+			print(indics)
+			with open('tmp_tde', 'w') as f2:
+				for idx in indics:
+					pp=sim.particles[int(idx)]
+					f2.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim.t, pp.x, pp.y, pp.z,\
+						pp.vx, pp.vy, pp.vz, pp.hash, pp.m))
+
 		##Should increment line below by pin not deltat
 		t+=p_in
 
