@@ -114,13 +114,18 @@ def get_tde(sim, reb_coll):
 		rg=sim[0].particles[0].m*(cgs.G*cgs.M_sun/cgs.c**2.0/cgs.pc)
 		name=sim[0].simulationarchive_filename.decode('utf-8')
 		f=open(name.replace('.bin', '_tde'), 'a+')
+		f2=open(name.replace('.bin', '_tde2'), 'a+')
+
 		if rp<10.0*rg:
 			sim[0].remove(idx)
 			sim.move_to_com()
 			return 0
 		f.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim[0].t, orbits[idx-1].a, orbits[idx-1].e, orbits[idx-1].inc,\
 			orbits[idx-1].omega, orbits[idx-1].Omega, sim[0].particles[idx].hash, sim[0].particles[idx].m))
+		f2.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim[0].t, sim[0].x, sim[0].y,sim[0].z,\
+			sim[0].vx, sim[0].vy, sim[0].vz, sim[0].particles[idx].hash, sim[0].particles[idx].m))
 		f.close()
+		f2.close()
 		sim.move_to_com()
 
 	return 0
