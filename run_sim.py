@@ -350,7 +350,7 @@ def main():
 			##Add 1 since central black hole is not included in rps
 			indics=np.array(range(len(rps)))[rps<rt]+1
 			print(indics)
-			with open('tmp_tde', 'w') as f2:
+			with open(loc+'tmp_tde', 'w') as f2:
 				for idx in indics:
 					pp=sim.particles[int(idx)]
 					f2.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim.t, pp.x, pp.y, pp.z,\
