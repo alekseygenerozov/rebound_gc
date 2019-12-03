@@ -338,6 +338,7 @@ def main():
 	##Period at the inner edge of the disk
 	p_in=2.0*np.pi*(a_min**3.0/Mbh)**0.5
 	my_step=0.1*p_in
+	rt=sim.particles[0].r
 	while(t<pRun):
 		if t>=orb_idx*delta_t:
 			orbits=sim.calculate_orbits(primary=sim.particles[0])
