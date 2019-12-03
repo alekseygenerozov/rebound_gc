@@ -87,6 +87,7 @@ def main():
 	delta_t=0.01*pRun
 	orb_idx=int(sim.t/(delta_t))+1
 	my_step=0.1*p_in
+	rt=sim.particles[0].r
 	while(sim.t<pRun):
 		# if t>=orb_idx*delta_t:
 		sim.move_to_com()
