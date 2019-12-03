@@ -85,7 +85,7 @@ def main():
 	sim.automateSimulationArchive(loc+name,interval=0.01*pRun,deletefile=False)
 	p_in=2.0*np.pi*(a_min**3.0/Mbh)**0.5
 	delta_t=0.01*pRun
-	orb_idx=int(t/(delta_t))+1
+	orb_idx=int(sim.t/(delta_t))+1
 	my_step=0.1*p_in
 	while(sim.t<pRun):
 		# if t>=orb_idx*delta_t:
