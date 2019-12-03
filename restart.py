@@ -85,20 +85,28 @@ def main():
 	sim.automateSimulationArchive(loc+name,interval=0.01*pRun,deletefile=False)
 	p_in=2.0*np.pi*(a_min**3.0/Mbh)**0.5
 	delta_t=0.01*pRun
-	t=sim.t
 	orb_idx=int(t/(delta_t))+1
-
-	while(t<pRun):
+	my_step=0.1*p_in
+	while(sim.t<pRun):
 		# if t>=orb_idx*delta_t:
 		sim.move_to_com()
-		sim.integrate(sim.t+p_in)
-		if t>=orb_idx*delta_t:
+		if sim.t>=orb_idx*delta_t:
 			orbits=sim.calculate_orbits(primary=sim.particles[0])
 			np.savetxt(loc+name.replace('.bin', '_out_{0}.dat'.format(orb_idx)), [[oo.a, oo.e, oo.inc, oo.Omega, oo.omega, oo.f] for oo in orbits])
 			orb_idx+=1
-		# orbits=sim.calculate_orbits(primary=sim.particles[0])
-		# np.savetxt(loc+name.replace('.bin', '_out_{0}.dat'.format(orb_idx)), [[oo.a, oo.e, oo.inc, oo.Omega, oo.omega, oo.f] for oo in orbits])
-		t+=p_in
+
+		sim.integrate(sim.t+my_step)
+		orbits=sim.calculate_orbits(primary=sim.particles[0])
+		rps=np.array([oo.a*(1-oo.e) for oo in orbits])
+		if np.any(rps<rt):
+			##Add 1 since central black hole is not included in rps
+			indics=np.array(range(len(rps)))[rps<rt]+1
+			print(indics)
+			with open(loc+'tmp_tde', 'a+') as f2:
+				for idx in indics:
+					pp=sim.particles[int(idx)]
+					f2.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim.t, pp.x, pp.y, pp.z,\
+						pp.vx, pp.vy, pp.vz, pp.hash, pp.m))
 
 
 
