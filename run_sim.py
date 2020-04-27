@@ -124,9 +124,10 @@ def get_tde(sim, reb_coll):
 		f.close()
 
 		pp=sim[0].particles[idx]
+		ppc=sim[0].particles[0]
 		with open(name.replace('.bin', '_tde2'), 'a+') as f2:
-			f2.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim[0].t, pp.x, pp.y, pp.z,\
-				pp.vx, pp.vy, pp.vz, pp.hash, pp.m))
+			f2.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim[0].t, pp.x-ppc.x, pp.y-ppc.y, pp.z-ppc.z,\
+				pp.vx-ppc.vx, pp.vy-ppc.vy, pp.vz-ppc.vz, pp.hash, pp.m))
 		sim.move_to_com()
 
 	return 0
@@ -296,6 +297,8 @@ def main():
 
 
 	
+
+
 	##Stellar potential
 	rebx = reboundx.Extras(sim)
 	if rinf>0:
@@ -324,13 +327,13 @@ def main():
 	en=sim.calculate_energy()
 	print(sim.N, rebound.__version__)
 	t=0.0
-	delta_t=0.01*pRun
+	delta_t=0.0001*pRun
 	orb_idx=0
 	# print(delta_t, pRun)
 	f=open(loc+'init_disk', 'w')
 	for ii in range(len(sim.particles)):
-		f.write('{0:.16e} {1:.16e} {2:.16e} {3:.16e} {4:.16e} {5:.16e} {6:.16e}\n'.format(sim.particles[ii].x, sim.particles[ii].y, sim.particles[ii].z,\
-			sim.particles[ii].vx, sim.particles[ii].vy, sim.particles[ii].vz, sim.particles[ii].m))
+		f.write('{0:.16e} {1:.16e} {2:.16e} {3:.16e} {4:.16e} {5:.16e} {6:.16e}\n'.format(sim.particles[ii].x-sim.particles[0].x, sim.particles[ii].y-sim.particles[0].y, sim.particles[ii].z-sim.particles[0].z,\
+			sim.particles[ii].vx-sim.particles[0].vx, sim.particles[ii].vy-sim.particles[0].vy, sim.particles[ii].vz-sim.particles[0].vz, sim.particles[ii].m))
 	f.close()
 
 	print(sim.particles[1].hash)
@@ -341,7 +344,7 @@ def main():
 	while(t<pRun):
 		if t>=orb_idx*delta_t:
 			orbits=sim.calculate_orbits(primary=sim.particles[0])
-			np.savetxt(loc+name.replace('.bin', '_out_{0}.dat'.format(orb_idx)), [[oo.a, oo.e, oo.inc, oo.Omega, oo.omega, oo.f] for oo in orbits])
+			np.savetxt(loc+name.replace('.bin', '_out_{0}.dat'.format(orb_idx)), [[oo.a, oo.e, oo.inc, oo.Omega, oo.omega, oo.f, sim.particles[ii+1].hash] for ii, oo in enumerate(orbits)])
 			orb_idx+=1
 		sim.move_to_com()
 		sim.integrate(sim.t+my_step)
