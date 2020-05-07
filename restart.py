@@ -94,6 +94,8 @@ def main():
 		if sim.t>=orb_idx*delta_t:
 			orbits=sim.calculate_orbits(primary=sim.particles[0])
 			np.savetxt(loc+name.replace('.bin', '_out_{0}.dat'.format(orb_idx)), [[oo.a, oo.e, oo.inc, oo.Omega, oo.omega, oo.f] for oo in orbits])
+			np.savetxt(loc+name.replace('.bin', '_out_{0}.hash'.format(orb_idx)),\
+				np.array([str(sim.particles[i].hash) for i in range(len(sim.particles))]).astype(str), fmt='%s')
 			orb_idx+=1
 
 		sim.integrate(sim.t+my_step)
