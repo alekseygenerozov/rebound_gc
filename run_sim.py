@@ -116,7 +116,12 @@ def get_tde(sim, reb_coll):
 		f=open(name.replace('.bin', '_tde'), 'a+')
 
 		if rp<10.0*rg:
+			m1=sim[0].particles[0].m
+			m2=sim[0].particles[idx].m
+			sim[0].particles[0]=(m1*sim[0].particles[0]+m2*sim[0].particles[idx])/(m1+m2)
+			sim[0].particles[0].m=(m1+m2)
 			sim[0].remove(idx)
+
 			sim.move_to_com()
 			return 0
 		f.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim[0].t, orbits[idx-1].a, orbits[idx-1].e, orbits[idx-1].inc,\
