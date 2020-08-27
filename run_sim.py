@@ -292,9 +292,11 @@ def main():
 	sim.collision=coll
 	sim.collision_resolve=get_tde
 	delR=config.getboolean('params', 'delR')
-	merge=config.getboolean('params', 'merge')
-	if merge:
-		sim.collision_resolve='merge'
+	##We cannot get merges in restart !!!
+	# merge=config.getboolean('params', 'merge')
+	# if merge:
+	# 	sim.collision_resolve='merge'
+	##Move this above the previo
 	if not delR:
 		print('delR:', delR)
 		sim.collision_resolve=get_tde_no_delR
