@@ -47,7 +47,9 @@ def main():
 	gr=config.getboolean('params', 'gr')
 	rinf=config.getfloat('params', 'rinf')
 	alpha=config.getfloat('params', 'alpha')
-	menc_comp=config.getboolean('params', 'menc_comp')
+	beta=config.getfloat('params', 'beta')
+	rb=config.getfloat('params', 'rb')
+	rho_rb=config.getfloat('params', 'rho_rb')
 	Mbh=config.getfloat('params', 'Mbh')
 	sections=config.sections()
 	sections=sections[1:]
@@ -68,16 +70,16 @@ def main():
 
 	##Stellar potential
 	rebx = reboundx.Extras(sim)
-	##Why is this here??
-	# ps=sim.particles
-	# ps[0].params["primary"]=1
 	if rinf>0:
-		if menc_comp:
-			menc=rebx.add("menc_comp")
-		else:
-			menc=rebx.add("menc")
+		menc=rebx.add("menc")
 		menc.params["rinf"]=rinf
 		menc.params["alpha"]=alpha
+	elif rho_rb>0:
+		menc=rebx.add("menc_dp")
+		menc.params["rb"]=rb
+		menc.params["rho_rb"]=rho_rb
+		menc.params["alpha"]=alpha
+		menc.params["beta"]=beta
 	##GR effects
 	if gr:
 		gr=rebx.add("gr")
