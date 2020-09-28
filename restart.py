@@ -69,8 +69,8 @@ def main():
 	##Stellar potential
 	rebx = reboundx.Extras(sim)
 	##Why is this here??
-	ps=sim.particles
-	ps[0].params["primary"]=1
+	# ps=sim.particles
+	# ps[0].params["primary"]=1
 	if rinf>0:
 		if menc_comp:
 			menc=rebx.add("menc_comp")

@@ -200,6 +200,7 @@ def main():
 	dt=config.getfloat('params', 'dt')
 	if dt:
 		sim.dt=dt
+	##Should get rid of this as we don't have it in restart.
 	if sim.gravity=='tree':
 		##Fixing box, angle, and boundary parameters in the tree code.
 		sim.configure_box(10.)
@@ -268,7 +269,7 @@ def main():
 			to_del=(np.sort(np.unique(bins[:,1]))[::-1]).astype(int)
 			#print "deleting",len(to_del)
 			for idx in to_del:
-				print(idx)
+				print(type(idx), idx)
 				sim.remove(index=int(idx))
 			sim.integrate(sim.t+sim.t*1.0e-14)
 			bins=bin_find_sim(sim)
@@ -284,6 +285,7 @@ def main():
 	for ss in sections[::-1]:
 		to_del=range(nparts[ss][0]+num[ss], nparts[ss][-1]+1)[::-1]
 		for idx in to_del:
+			# print(type(idx))
 			sim.remove(index=idx)
 	print(len(sim.particles))
 
@@ -300,7 +302,7 @@ def main():
 	if not delR:
 		print('delR:', delR)
 		sim.collision_resolve=get_tde_no_delR
-	print("gr:", gr, "rinf:", rinf, "alpha:", alpha, "merge:", merge)
+	# print("gr:", gr, "rinf:", rinf, "alpha:", alpha, "merge:", merge)
 
 
 	
@@ -325,7 +327,7 @@ def main():
 	##Set up simulation archive for output
 	# sa = rebound.SimulationArchive(loc+name, rebxfilename='rebx.bin')
 	sim.automateSimulationArchive(loc+name,interval=pOut*pRun,deletefile=True)
-	sim.heartbeat=heartbeat
+	# sim.heartbeat=heartbeat
 	sim.move_to_com()
 	sim.simulationarchive_snapshot(loc+name)
 	bc.bash_command('cp {0} {1}'.format(config_file, loc))
