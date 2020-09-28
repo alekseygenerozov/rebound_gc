@@ -336,47 +336,48 @@ def main():
 	bc.bash_command('cp {0} {1}'.format(config_file, loc))
 
 
-	# en=sim.calculate_energy()
-	# print(sim.N, rebound.__version__)
-	# t=0.0
-	# delta_t=0.01*pRun
-	# orb_idx=0
-	# # print(delta_t, pRun)
-	# f=open(loc+'init_disk', 'w')
-	# for ii in range(len(sim.particles)):
-	# 	f.write('{0:.16e} {1:.16e} {2:.16e} {3:.16e} {4:.16e} {5:.16e} {6:.16e}\n'.format(sim.particles[ii].x-sim.particles[0].x, sim.particles[ii].y-sim.particles[0].y, sim.particles[ii].z-sim.particles[0].z,\
-	# 		sim.particles[ii].vx-sim.particles[0].vx, sim.particles[ii].vy-sim.particles[0].vy, sim.particles[ii].vz-sim.particles[0].vz, sim.particles[ii].m))
-	# f.close()
+	en=sim.calculate_energy()
+	print(sim.N, rebound.__version__)
+	t=0.0
+	delta_t=0.01*pRun
+	orb_idx=0
+	# print(delta_t, pRun)
+	f=open(loc+'init_disk', 'w')
+	for ii in range(len(sim.particles)):
+		f.write('{0:.16e} {1:.16e} {2:.16e} {3:.16e} {4:.16e} {5:.16e} {6:.16e}\n'.format(sim.particles[ii].x-sim.particles[0].x, sim.particles[ii].y-sim.particles[0].y, sim.particles[ii].z-sim.particles[0].z,\
+			sim.particles[ii].vx-sim.particles[0].vx, sim.particles[ii].vy-sim.particles[0].vy, sim.particles[ii].vz-sim.particles[0].vz, sim.particles[ii].m))
+	f.close()
 
-	# print(sim.particles[1].hash)
-	# print(sim.integrator, sim.dt)
-	# ##Period at the inner edge of the disk
-	# p_in=2.0*np.pi*(a_min**3.0/Mbh)**0.5
-	# my_step=0.1*p_in
-	# while(t<pRun):
-	# 	if t>=orb_idx*delta_t:
-	# 		orbits=sim.calculate_orbits(primary=sim.particles[0])
-	# 		np.savetxt(loc+name.replace('.bin', '_out_{0}.dat'.format(orb_idx)), [[oo.a, oo.e, oo.inc, oo.Omega, oo.omega, oo.f] for oo in orbits])
-	# 		np.savetxt(loc+name.replace('.bin', '_out_{0}.hash'.format(orb_idx)),\
-	# 		 np.array([str(sim.particles[i].hash) for i in range(len(sim.particles))]).astype(str), fmt='%s')
-	# 		orb_idx+=1
-	# 	sim.move_to_com()
-	# 	sim.integrate(sim.t+my_step)
-	# 	orbits=sim.calculate_orbits(primary=sim.particles[0])
-	# 	rps=np.array([oo.a*(1-oo.e) for oo in orbits])
-	# 	if np.any(rps<rt):
-	# 		##Add 1 since central black hole is not included in rps
-	# 		indics=np.array(range(len(rps)))[rps<rt]+1
-	# 		print(indics)
-	# 		with open(loc+'tmp_tde', 'a+') as f2:
-	# 			for idx in indics:
-	# 				pp=sim.particles[int(idx)]
-	# 				f2.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim.t, pp.x, pp.y, pp.z,\
-	# 					pp.vx, pp.vy, pp.vz, pp.hash, pp.m))
+	print(sim.particles[1].hash)
+	print(sim.integrator, sim.dt)
+	##Period at the inner edge of the disk
+	p_in=2.0*np.pi*(a_min**3.0/Mbh)**0.5
+	my_step=0.1*p_in
+	while(t<pRun):
+		fen.write(sim.calculate_energy())
+		if t>=orb_idx*delta_t:
+			orbits=sim.calculate_orbits(primary=sim.particles[0])
+			np.savetxt(loc+name.replace('.bin', '_out_{0}.dat'.format(orb_idx)), [[oo.a, oo.e, oo.inc, oo.Omega, oo.omega, oo.f] for oo in orbits])
+			np.savetxt(loc+name.replace('.bin', '_out_{0}.hash'.format(orb_idx)),\
+			 np.array([str(sim.particles[i].hash) for i in range(len(sim.particles))]).astype(str), fmt='%s')
+			orb_idx+=1
+		sim.move_to_com()
+		sim.integrate(sim.t+my_step)
+		orbits=sim.calculate_orbits(primary=sim.particles[0])
+		rps=np.array([oo.a*(1-oo.e) for oo in orbits])
+		if np.any(rps<rt):
+			##Add 1 since central black hole is not included in rps
+			indics=np.array(range(len(rps)))[rps<rt]+1
+			print(indics)
+			with open(loc+'tmp_tde', 'a+') as f2:
+				for idx in indics:
+					pp=sim.particles[int(idx)]
+					f2.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim.t, pp.x, pp.y, pp.z,\
+						pp.vx, pp.vy, pp.vz, pp.hash, pp.m))
 
-	# 	##Should increment line below by pin not deltat
-	# 	t+=my_step
-
+		##Should increment line below by pin not deltat
+		t+=my_step
+	fen.close()
 
 
 
