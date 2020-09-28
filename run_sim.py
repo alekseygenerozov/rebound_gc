@@ -161,9 +161,9 @@ def main():
 	config=configparser.SafeConfigParser(defaults={'name': 'archive', 'N':'100', 'e':'0.7',
 		'gravity':'compensated', 'integrator':'ias15', 'dt':'0', \
 		'a_min':'0.05', 'a_max':'0.5', 'ang1_mean':'0', 'ang2_mean':'0', 'ang3_mean':'0', 'ang1':'2.',\
-		 'ang2':'2.', 'ang3':'2.', 'keep_bins':'False', 'coll':'line', 'pRun':'0.1', 'pOut':'0.1', 
-		'p':'1', 'frac':'2.5e-3', 'outDir':'./', 'gr':'True', 'rinf':'4.0', 'alpha':'1.5',
-		'rt':'1e-4', 'mf':"mfixed", 'merge':'False', 'menc_comp':'False', 'Mbh':'4e6',
+		'ang2':'2.', 'ang3':'2.', 'keep_bins':'False', 'coll':'line', 'pRun':'0.1', 'pOut':'0.1', \
+		'p':'1', 'frac':'2.5e-3', 'outDir':'./', 'gr':'True', 'rinf':'4.0', 'alpha':'1.5', 'beta':'1.5', 'rb':'3',\
+		'rho_rb':'0','rt':'1e-4', 'mf':"mfixed", 'merge':'False', 'menc_comp':'False', 'Mbh':'4e6',\
 		'c':'4571304.57795483', 'delR':'True', 'epsilon':'1e-9'}, dict_type=OrderedDict)
 	# config.optionxform=str
 	config.read(config_file)
@@ -181,7 +181,10 @@ def main():
 	gr=config.getboolean('params', 'gr')
 	rinf=config.getfloat('params', 'rinf')
 	alpha=config.getfloat('params', 'alpha')
-	menc_comp=config.getboolean('params', 'menc_comp')
+	beta=config.getfloat('params', 'beta')
+	rb=config.getfloat('params', 'rb')
+	rho_rb=config.getfloat('params', 'rho_rb')
+	# menc_comp=config.getboolean('params', 'menc_comp')
 	Mbh=config.getfloat('params', 'Mbh')
 
 	#print pRun, pOut, rt, coll
@@ -201,11 +204,11 @@ def main():
 	if dt:
 		sim.dt=dt
 	##Should get rid of this as we don't have it in restart.
-	if sim.gravity=='tree':
-		##Fixing box, angle, and boundary parameters in the tree code.
-		sim.configure_box(10.)
-		sim.boundary='open'
-		sim.opening_angle2=1.5
+	# if sim.gravity=='tree':
+		# ##Fixing box, angle, and boundary parameters in the tree code.
+		# sim.configure_box(10.)
+		# sim.boundary='open'
+		# sim.opening_angle2=1.5
 
 	buff=1.5
 	mbar=6.0
@@ -311,13 +314,15 @@ def main():
 	##Stellar potential
 	rebx = reboundx.Extras(sim)
 	if rinf>0:
-		if menc_comp:
-			print("test!")
-			menc=rebx.add("menc_comp")
-		else:
-			menc=rebx.add("menc")
+		menc=rebx.add("menc")
 		menc.params["rinf"]=rinf
 		menc.params["alpha"]=alpha
+	elif rho_rb>0:
+		menc=rebx.add("menc_dp")
+		menc.params["rb"]=rb
+		menc.params["rho_rb"]=rho_rb
+		menc.params["alpha"]=alpha
+		menc.params["beta"]=beta
 	##GR effects
 	if gr:
 		gr=rebx.add("gr")
