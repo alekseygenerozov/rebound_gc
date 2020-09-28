@@ -158,13 +158,13 @@ def main():
 	loc="trial_{0}/".format(args.index)
 	bc.bash_command('mkdir {0}'.format(loc))
 	##Default stellar parameters 
-	config=configparser.SafeConfigParser(defaults={'name': 'archive', 'N':'100', 'e':'0.7',
+	config=configparser.SafeConfigParser(defaults={'name': 'archive', 'N':'100', 'e':'0.7', 'eslope':'0',
 		'gravity':'compensated', 'integrator':'ias15', 'dt':'0', \
 		'a_min':'0.05', 'a_max':'0.5', 'ang1_mean':'0', 'ang2_mean':'0', 'ang3_mean':'0', 'ang1':'2.',\
 		'ang2':'2.', 'ang3':'2.', 'keep_bins':'False', 'coll':'line', 'pRun':'0.1', 'pOut':'0.1', \
 		'p':'1', 'frac':'2.5e-3', 'outDir':'./', 'gr':'True', 'rinf':'4.0', 'alpha':'1.5', 'beta':'1.5', 'rb':'3',\
 		'rho_rb':'0','rt':'1e-4', 'mf':"mfixed", 'merge':'False', 'menc_comp':'False', 'Mbh':'4e6',\
-		'c':'4571304.57795483', 'delR':'True', 'epsilon':'1e-9'}, dict_type=OrderedDict)
+		'c':'4571304.57795483', 'delR':'True', 'epsilon':'1e-9', 'twist':'0'}, dict_type=OrderedDict)
 	# config.optionxform=str
 	config.read(config_file)
 
@@ -203,12 +203,6 @@ def main():
 	dt=config.getfloat('params', 'dt')
 	if dt:
 		sim.dt=dt
-	##Should get rid of this as we don't have it in restart.
-	# if sim.gravity=='tree':
-		# ##Fixing box, angle, and boundary parameters in the tree code.
-		# sim.configure_box(10.)
-		# sim.boundary='open'
-		# sim.opening_angle2=1.5
 
 	buff=1.5
 	mbar=6.0
@@ -221,6 +215,7 @@ def main():
 		num[ss]=int(config.get(ss, 'N'))
 		N=int(buff*num[ss])
 		e=config.getfloat(ss, 'e')
+		eslope=config.getfloat(ss, 'eslope')
 		##rescale stellar masses so they are a fixed fraction of the central mass.
 		frac=config.getfloat(ss, 'frac')
 		mbar=sim.particles[0].m*frac/num[ss]
@@ -234,19 +229,22 @@ def main():
 		ang2=config.getfloat(ss, 'ang2')
 		ang3_mean=config.getfloat(ss, 'ang3_mean')
 		ang3=config.getfloat(ss, 'ang3')
+		twist=config.getfloat(ss, 'twist')
+
 		##We can generalize this to be a function?
 		# rt=config.getfloat(ss, 'rt')
 
 		N0=len(sim.particles)
 		for l in range(0,N): # Adds stars
 			##Use AM's code to generate disk with aligned eccentricity vectors, but a small scatter in i and both omegas...
-			inc, Omega, omega=gen_disk(ang1*np.pi/180., ang1_mean*np.pi/180., ang2*np.pi/180., ang2_mean*np.pi/180., ang3*np.pi/180., ang3_mean*np.pi/180.0)
 			a0=density(a_min, a_max, p)
+			tt=np.interp(a0, [a_min, a_max], [0, twist])
+			inc, Omega, omega=gen_disk(ang1*np.pi/180., (ang1_mean)*np.pi/180., ang2*np.pi/180., (ang2_mean)*np.pi/180., ang3*np.pi/180., (ang3_mean+tt)*np.pi/180.0)
 			##Better way to include the mass spectrum...name of function define MF as a parameter.
 			m=globals()[config.get(ss, "mf")](mbar)
 			M = rand.uniform(0., 2.*np.pi)
 			# print(m, (sim.particles[0].m/m)**(1./3.)*0.1*cgs.au/cgs.pc)
-			sim.add(m = m, a = a0, e = e, inc=inc, Omega = Omega, omega = omega, M = M, primary=sim.particles[0],\
+			sim.add(m = m, a = a0, e = e*(a0/a_min)**-eslope, inc=inc, Omega = Omega, omega = omega, M = M, primary=sim.particles[0],\
 				r=0, hash=str(l))
 		##Indices of each component
 		nparts[ss]=(N0,N0+N-1)
@@ -338,46 +336,46 @@ def main():
 	bc.bash_command('cp {0} {1}'.format(config_file, loc))
 
 
-	en=sim.calculate_energy()
-	print(sim.N, rebound.__version__)
-	t=0.0
-	delta_t=0.01*pRun
-	orb_idx=0
-	# print(delta_t, pRun)
-	f=open(loc+'init_disk', 'w')
-	for ii in range(len(sim.particles)):
-		f.write('{0:.16e} {1:.16e} {2:.16e} {3:.16e} {4:.16e} {5:.16e} {6:.16e}\n'.format(sim.particles[ii].x-sim.particles[0].x, sim.particles[ii].y-sim.particles[0].y, sim.particles[ii].z-sim.particles[0].z,\
-			sim.particles[ii].vx-sim.particles[0].vx, sim.particles[ii].vy-sim.particles[0].vy, sim.particles[ii].vz-sim.particles[0].vz, sim.particles[ii].m))
-	f.close()
+	# en=sim.calculate_energy()
+	# print(sim.N, rebound.__version__)
+	# t=0.0
+	# delta_t=0.01*pRun
+	# orb_idx=0
+	# # print(delta_t, pRun)
+	# f=open(loc+'init_disk', 'w')
+	# for ii in range(len(sim.particles)):
+	# 	f.write('{0:.16e} {1:.16e} {2:.16e} {3:.16e} {4:.16e} {5:.16e} {6:.16e}\n'.format(sim.particles[ii].x-sim.particles[0].x, sim.particles[ii].y-sim.particles[0].y, sim.particles[ii].z-sim.particles[0].z,\
+	# 		sim.particles[ii].vx-sim.particles[0].vx, sim.particles[ii].vy-sim.particles[0].vy, sim.particles[ii].vz-sim.particles[0].vz, sim.particles[ii].m))
+	# f.close()
 
-	print(sim.particles[1].hash)
-	print(sim.integrator, sim.dt)
-	##Period at the inner edge of the disk
-	p_in=2.0*np.pi*(a_min**3.0/Mbh)**0.5
-	my_step=0.1*p_in
-	while(t<pRun):
-		if t>=orb_idx*delta_t:
-			orbits=sim.calculate_orbits(primary=sim.particles[0])
-			np.savetxt(loc+name.replace('.bin', '_out_{0}.dat'.format(orb_idx)), [[oo.a, oo.e, oo.inc, oo.Omega, oo.omega, oo.f] for oo in orbits])
-			np.savetxt(loc+name.replace('.bin', '_out_{0}.hash'.format(orb_idx)),\
-			 np.array([str(sim.particles[i].hash) for i in range(len(sim.particles))]).astype(str), fmt='%s')
-			orb_idx+=1
-		sim.move_to_com()
-		sim.integrate(sim.t+my_step)
-		orbits=sim.calculate_orbits(primary=sim.particles[0])
-		rps=np.array([oo.a*(1-oo.e) for oo in orbits])
-		if np.any(rps<rt):
-			##Add 1 since central black hole is not included in rps
-			indics=np.array(range(len(rps)))[rps<rt]+1
-			print(indics)
-			with open(loc+'tmp_tde', 'a+') as f2:
-				for idx in indics:
-					pp=sim.particles[int(idx)]
-					f2.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim.t, pp.x, pp.y, pp.z,\
-						pp.vx, pp.vy, pp.vz, pp.hash, pp.m))
+	# print(sim.particles[1].hash)
+	# print(sim.integrator, sim.dt)
+	# ##Period at the inner edge of the disk
+	# p_in=2.0*np.pi*(a_min**3.0/Mbh)**0.5
+	# my_step=0.1*p_in
+	# while(t<pRun):
+	# 	if t>=orb_idx*delta_t:
+	# 		orbits=sim.calculate_orbits(primary=sim.particles[0])
+	# 		np.savetxt(loc+name.replace('.bin', '_out_{0}.dat'.format(orb_idx)), [[oo.a, oo.e, oo.inc, oo.Omega, oo.omega, oo.f] for oo in orbits])
+	# 		np.savetxt(loc+name.replace('.bin', '_out_{0}.hash'.format(orb_idx)),\
+	# 		 np.array([str(sim.particles[i].hash) for i in range(len(sim.particles))]).astype(str), fmt='%s')
+	# 		orb_idx+=1
+	# 	sim.move_to_com()
+	# 	sim.integrate(sim.t+my_step)
+	# 	orbits=sim.calculate_orbits(primary=sim.particles[0])
+	# 	rps=np.array([oo.a*(1-oo.e) for oo in orbits])
+	# 	if np.any(rps<rt):
+	# 		##Add 1 since central black hole is not included in rps
+	# 		indics=np.array(range(len(rps)))[rps<rt]+1
+	# 		print(indics)
+	# 		with open(loc+'tmp_tde', 'a+') as f2:
+	# 			for idx in indics:
+	# 				pp=sim.particles[int(idx)]
+	# 				f2.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim.t, pp.x, pp.y, pp.z,\
+	# 					pp.vx, pp.vy, pp.vz, pp.hash, pp.m))
 
-		##Should increment line below by pin not deltat
-		t+=my_step
+	# 	##Should increment line below by pin not deltat
+	# 	t+=my_step
 
 
 
