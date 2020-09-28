@@ -252,7 +252,7 @@ def main():
 	sim.move_to_com()
 
 
-	fen=open(loc+name.replace('.bin', '_en'), 'a')
+	fen=open(loc+name.replace('.bin', '_en'), 'w')
 	fen.write(sim.gravity+'_'+sim.integrator+'_'+'{0}'.format(sim.dt))
 	if not keep_bins:
 		##Integrate forward a small amount time to initialize accelerations.
@@ -354,7 +354,7 @@ def main():
 	p_in=2.0*np.pi*(a_min**3.0/Mbh)**0.5
 	my_step=0.1*p_in
 	while(t<pRun):
-		fen.write(sim.calculate_energy())
+		fen.write(str(sim.calculate_energy())+'\n')
 		if t>=orb_idx*delta_t:
 			orbits=sim.calculate_orbits(primary=sim.particles[0])
 			np.savetxt(loc+name.replace('.bin', '_out_{0}.dat'.format(orb_idx)), [[oo.a, oo.e, oo.inc, oo.Omega, oo.omega, oo.f] for oo in orbits])
