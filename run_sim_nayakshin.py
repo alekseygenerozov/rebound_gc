@@ -18,6 +18,7 @@ import os
 import shlex
 import cgs_const as cgs
 
+# np.random.seed(3)
 def get_last_index(loc="."):
 	trials=bc.bash_command("echo trial_*").decode('utf-8')
 	trials=shlex.split(trials)
@@ -164,12 +165,13 @@ def main():
 		'ang2':'2.', 'ang3':'2.', 'keep_bins':'False', 'coll':'line', 'pRun':'0.1', 'pOut':'0.1', \
 		'p':'1', 'frac':'2.5e-3', 'outDir':'./', 'gr':'True', 'rinf':'4.0', 'alpha':'1.5', 'beta':'1.5', 'rb':'3',\
 		'rho_rb':'0','rt':'1e-4', 'mf':"mfixed", 'merge':'False', 'menc_comp':'False', 'Mbh':'4e6',\
-		'c':'4571304.57795483', 'delR':'True', 'epsilon':'1e-9', 'twist':'0', 'seed':'False'}, dict_type=OrderedDict)
+		'c':'4571304.57795483', 'delR':'True', 'epsilon':'1e-9', 'twist':'0'}, dict_type=OrderedDict)
 	# config.optionxform=str
 	config.read(config_file)
 
-	##Name of our put file 
+	##Name of output file 
 	name=config.get('params', 'name')
+	init_file=config.get('params', 'init_file')
 	name=name+".bin"
 	name=config.get('params', 'outDir')+'/'+name
 	##Length of simulation and interval between snapshots
@@ -186,10 +188,6 @@ def main():
 	rho_rb=config.getfloat('params', 'rho_rb')
 	# menc_comp=config.getboolean('params', 'menc_comp')
 	Mbh=config.getfloat('params', 'Mbh')
-	seed=config.getboolean('params', 'seed')
-	if seed:
-		print('seed:', seed)
-		np.random.seed(123)
 
 	#print pRun, pOut, rt, coll
 	sections=config.sections()
@@ -218,100 +216,64 @@ def main():
 	for ss in sections:
 		num[ss]=int(config.get(ss, 'N'))
 		N=int(buff*num[ss])
-		e=config.getfloat(ss, 'e')
-		eslope=config.getfloat(ss, 'eslope')
+		print(N, num[ss])
 		##rescale stellar masses so they are a fixed fraction of the central mass.
 		frac=config.getfloat(ss, 'frac')
 		mbar=sim.particles[0].m*frac/num[ss]
 		print(mbar)
-		a_min=config.getfloat(ss, 'a_min')
-		a_max=config.getfloat(ss, 'a_max')
-		p=config.getfloat(ss, 'p')
-		ang1_mean=config.getfloat(ss, 'ang1_mean')
-		ang1=config.getfloat(ss, 'ang1')
-		ang2_mean=config.getfloat(ss, 'ang2_mean')
-		ang2=config.getfloat(ss, 'ang2')
-		ang3_mean=config.getfloat(ss, 'ang3_mean')
-		ang3=config.getfloat(ss, 'ang3')
-		twist=config.getfloat(ss, 'twist')
-
-		##We can generalize this to be a function?
-		# rt=config.getfloat(ss, 'rt')
-
 		N0=len(sim.particles)
+		#Read data and setup rebound simulation to get orbital elements
+		init_dat=np.genfromtxt(init_file)
+		#Convert velocities to cgs and then to sim units
+		init_dat[:,-3:]=init_dat[:,-3:]*1.0e5/(cgs.G*cgs.M_sun/cgs.pc)**0.5
+		#samp=np.random.randint(0, len(init_dat), N)
+		samp=list(range(len(init_dat)))
+		np.random.shuffle(samp)
+		samp=samp[:N]
+		init_dat=init_dat[samp]
 		for l in range(0,N): # Adds stars
-			##Use AM's code to generate disk with aligned eccentricity vectors, but a small scatter in i and both omegas...
-			a0=density(a_min, a_max, p)
-			tt=np.interp(a0, [a_min, a_max], [0, twist])
-			inc, Omega, omega=gen_disk(ang1*np.pi/180., (ang1_mean)*np.pi/180., ang2*np.pi/180., (ang2_mean)*np.pi/180., ang3*np.pi/180., (ang3_mean+tt)*np.pi/180.0)
-			##Better way to include the mass spectrum...name of function define MF as a parameter.
-			m=globals()[config.get(ss, "mf")](mbar)
-			M = np.random.uniform(0., 2.*np.pi)
-			# print(m, (sim.particles[0].m/m)**(1./3.)*0.1*cgs.au/cgs.pc)
-			sim.add(m = m, a = a0, e = e*(a0/a_min)**-eslope, inc=inc, Omega = Omega, omega = omega, M = M, primary=sim.particles[0],\
-				r=0, hash=str(l))
+			m=mbar
+			sim.add(m = m, x=init_dat[l, 1], y=init_dat[l, 2], z=init_dat[l, 3],\
+				vx=init_dat[l, 4], vy=init_dat[l, 5], vz=init_dat[l, 6], hash=str(l))
 		##Indices of each component
 		nparts[ss]=(N0,N0+N-1)
-	
-	sim.move_to_com()
 
-
-	fen=open(loc+name.replace('.bin', '_en'), 'w')
-	fen.write(sim.gravity+'_'+sim.integrator+'_'+'{0}'.format(sim.dt))
-	if not keep_bins:
-		##Integrate forward a small amount time to initialize accelerations.
-		sim.move_to_com()
-		sim.integrate(1.0e-15)
-		##Look for binaries
-		bins=bin_find_sim(sim)
-		bins=np.array(bins)
-		#print len(bins[:,[1,2]])
-		##Delete all the binaries that we found. The identification of binaries depends in part on the tidal field 
-		##of the star cluster, and this will change as we delete stars. So we repeat the binary 
-		##deletion process several times until there are none left.
-		while len(bins>0):
-			##Delete in reverse order (else the indices would become messed up)
-			to_del=(np.sort(np.unique(bins[:,1]))[::-1]).astype(int)
-			#print "deleting",len(to_del)
-			for idx in to_del:
-				print(type(idx), idx)
-				sim.remove(index=int(idx))
-			sim.integrate(sim.t+sim.t*1.0e-14)
-			bins=bin_find_sim(sim)
-			N0=1
-			##Update indices for each section after binary deletion
-			for ss in sections:
-				del1=len(np.intersect1d(range(nparts[ss][0],nparts[ss][-1]+1), to_del))
-				tot1=nparts[ss][-1]-nparts[ss][0]+1
-				nparts[ss]=(N0, N0+tot1-del1-1)
-				N0=N0+tot1-del1
-
+	##Deleting unbound particles
+	orbs=sim.calculate_orbits(primary=sim.particles[0])
+	smas=np.array([oo.a for oo in orbs])
+	to_del=(np.sort(np.where(smas<0)[0])[::-1]).astype(int)+1
+	print(len(to_del))
+	for idx in to_del:
+		sim.remove(index=int(idx))
+	N0=1
+	##Update indices for each section after deletion
+	for ss in sections:
+		del1=len(np.intersect1d(range(nparts[ss][0],nparts[ss][-1]+1), to_del))
+		tot1=nparts[ss][-1]-nparts[ss][0]+1
+		nparts[ss]=(N0, N0+tot1-del1-1)
+		N0=N0+tot1-del1
 	##Delete all of the excess particles
 	for ss in sections[::-1]:
 		to_del=range(nparts[ss][0]+num[ss], nparts[ss][-1]+1)[::-1]
 		for idx in to_del:
-			# print(type(idx))
 			sim.remove(index=idx)
-	print(len(sim.particles))
+	orbs=sim.calculate_orbits(primary=sim.particles[0])
+	smas=np.array([oo.a for oo in orbs])
+	print(len(sim.particles), len(smas[smas<0]))
 
+	sim.move_to_com()
+	##Energy data (may be too slow?)
+	fen=open(loc+name.replace('.bin', '_en'), 'w')
+	fen.write(sim.gravity+'_'+sim.integrator+'_'+'{0}'.format(sim.dt))
+	##Masses 
 	ms=np.array([pp.m for pp in sim.particles[1:]])
-	print(np.sum(ms))
+	##Collisions
 	sim.collision=coll
 	sim.collision_resolve=get_tde
 	delR=config.getboolean('params', 'delR')
-	##We cannot get merges in restart !!!
-	# merge=config.getboolean('params', 'merge')
-	# if merge:
-	# 	sim.collision_resolve='merge'
-	##Move this above the previo
 	if not delR:
 		print('delR:', delR)
 		sim.collision_resolve=get_tde_no_delR
-	# print("gr:", gr, "rinf:", rinf, "alpha:", alpha, "merge:", merge)
-
-
-	
-
 
 	##Stellar potential
 	rebx = reboundx.Extras(sim)
@@ -354,9 +316,11 @@ def main():
 
 	print(sim.particles[1].hash)
 	print(sim.integrator, sim.dt)
-	##Period at the inner edge of the disk
+	##Period at the inner edge of the disk (hard-code former to 0.05 for now)
+	a_min=0.05
 	p_in=2.0*np.pi*(a_min**3.0/Mbh)**0.5
 	my_step=0.1*p_in
+	print(my_step)
 	while(t<pRun):
 		fen.write(str(sim.calculate_energy())+'\n')
 		if t>=orb_idx*delta_t:

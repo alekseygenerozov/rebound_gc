@@ -54,6 +54,8 @@ def bin_props(p1, p2):
 	'''
 	dp = p1 - p2   
 	d2 = dp.x*dp.x+dp.y*dp.y+dp.z*dp.z
+	# print(d2)
+
 	##Calculate com velocity of two particles...
 	##Masses
 	m1=p1.m
