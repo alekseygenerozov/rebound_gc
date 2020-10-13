@@ -100,7 +100,7 @@ def get_tde_no_delR(sim, reb_coll):
 		f.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim[0].t, orbits[idx-1].a, orbits[idx-1].e, orbits[idx-1].inc,\
 			orbits[idx-1].omega, orbits[idx-1].Omega, sim[0].particles[idx].hash, sim[0].particles[idx].m))
 		f.close()
-		sim.move_to_com()
+		sim[0].move_to_com()
 
 	return 0
 
@@ -122,7 +122,7 @@ def get_tde(sim, reb_coll):
 			sim[0].particles[0].m=(m1+m2)
 			sim[0].remove(idx)
 
-			sim.move_to_com()
+			sim[0].move_to_com()
 			return 0
 		f.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim[0].t, orbits[idx-1].a, orbits[idx-1].e, orbits[idx-1].inc,\
 			orbits[idx-1].omega, orbits[idx-1].Omega, sim[0].particles[idx].hash, sim[0].particles[idx].m))
@@ -133,7 +133,7 @@ def get_tde(sim, reb_coll):
 		with open(name.replace('.bin', '_tde2'), 'a+') as f2:
 			f2.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim[0].t, pp.x-ppc.x, pp.y-ppc.y, pp.z-ppc.z,\
 				pp.vx-ppc.vx, pp.vy-ppc.vy, pp.vz-ppc.vz, pp.hash, pp.m))
-		sim.move_to_com()
+		sim[0].move_to_com()
 
 	return 0
 
@@ -189,7 +189,7 @@ def main():
 	seed=config.getboolean('params', 'seed')
 	if seed:
 		print('seed:', seed)
-		np.random.seed(123)
+		np.random.seed(1234)
 
 	#print pRun, pOut, rt, coll
 	sections=config.sections()
@@ -244,6 +244,7 @@ def main():
 			a0=density(a_min, a_max, p)
 			tt=np.interp(a0, [a_min, a_max], [0, twist])
 			inc, Omega, omega=gen_disk(ang1*np.pi/180., (ang1_mean)*np.pi/180., ang2*np.pi/180., (ang2_mean)*np.pi/180., ang3*np.pi/180., (ang3_mean+tt)*np.pi/180.0)
+			print(inc)
 			##Better way to include the mass spectrum...name of function define MF as a parameter.
 			m=globals()[config.get(ss, "mf")](mbar)
 			M = np.random.uniform(0., 2.*np.pi)
@@ -333,8 +334,8 @@ def main():
 
 	##Set up simulation archive for output
 	# sa = rebound.SimulationArchive(loc+name, rebxfilename='rebx.bin')
-	sim.automateSimulationArchive(loc+name,interval=pOut*pRun,deletefile=True)
-	# sim.heartbeat=heartbeat
+	sim.automateSimulationArchive(loc+name,interval=pOut*pRun, deletefile=True)
+	sim.heartbeat=heartbeat
 	sim.move_to_com()
 	sim.simulationarchive_snapshot(loc+name)
 	bc.bash_command('cp {0} {1}'.format(config_file, loc))
@@ -355,8 +356,9 @@ def main():
 	print(sim.particles[1].hash)
 	print(sim.integrator, sim.dt)
 	##Period at the inner edge of the disk
-	p_in=2.0*np.pi*(a_min**3.0/Mbh)**0.5
+	p_in=min(2.0*np.pi*(a_min**3.0/Mbh)**0.5, pRun)
 	my_step=0.1*p_in
+
 	while(t<pRun):
 		fen.write(str(sim.calculate_energy())+'\n')
 		if t>=orb_idx*delta_t:
