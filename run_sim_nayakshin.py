@@ -101,7 +101,7 @@ def get_tde_no_delR(sim, reb_coll):
 		f.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim[0].t, orbits[idx-1].a, orbits[idx-1].e, orbits[idx-1].inc,\
 			orbits[idx-1].omega, orbits[idx-1].Omega, sim[0].particles[idx].hash, sim[0].particles[idx].m))
 		f.close()
-		sim.move_to_com()
+		sim[0].move_to_com()
 
 	return 0
 
@@ -123,7 +123,7 @@ def get_tde(sim, reb_coll):
 			sim[0].particles[0].m=(m1+m2)
 			sim[0].remove(idx)
 
-			sim.move_to_com()
+			sim[0].move_to_com()
 			return 0
 		f.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim[0].t, orbits[idx-1].a, orbits[idx-1].e, orbits[idx-1].inc,\
 			orbits[idx-1].omega, orbits[idx-1].Omega, sim[0].particles[idx].hash, sim[0].particles[idx].m))
@@ -134,7 +134,7 @@ def get_tde(sim, reb_coll):
 		with open(name.replace('.bin', '_tde2'), 'a+') as f2:
 			f2.write('{0} {1} {2} {3} {4} {5} {6} {7}\n'.format(sim[0].t, pp.x-ppc.x, pp.y-ppc.y, pp.z-ppc.z,\
 				pp.vx-ppc.vx, pp.vy-ppc.vy, pp.vz-ppc.vz, pp.hash, pp.m))
-		sim.move_to_com()
+		sim[0].move_to_com()
 
 	return 0
 
