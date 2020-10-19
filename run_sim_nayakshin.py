@@ -165,7 +165,7 @@ def main():
 		'ang2':'2.', 'ang3':'2.', 'keep_bins':'False', 'coll':'line', 'pRun':'0.1', 'pOut':'0.1', \
 		'p':'1', 'frac':'2.5e-3', 'outDir':'./', 'gr':'True', 'rinf':'4.0', 'alpha':'1.5', 'beta':'1.5', 'rb':'3',\
 		'rho_rb':'0','rt':'1e-4', 'mf':"mfixed", 'merge':'False', 'menc_comp':'False', 'Mbh':'4e6',\
-		'c':'4571304.57795483', 'delR':'True', 'epsilon':'1e-9', 'twist':'0'}, dict_type=OrderedDict)
+		'c':'4571304.57795483', 'delR':'True', 'epsilon':'1e-9', 'twist':'0', 'buff':'1.5'}, dict_type=OrderedDict)
 	# config.optionxform=str
 	config.read(config_file)
 
@@ -197,7 +197,7 @@ def main():
 	sim.G = 1.	
 	##Central object
 	rt=config.getfloat('params', 'rt')	
-	sim.add(m = Mbh, r=rt, hash="smbh") 
+	# sim.add(m = Mbh, r=rt, hash="smbh") 
 	sim.gravity=config.get('params', 'gravity')
 	sim.integrator=config.get('params', 'integrator')
 	epsilon=config.getfloat('params', 'epsilon')
@@ -206,31 +206,33 @@ def main():
 	if dt:
 		sim.dt=dt
 
-	buff=1.5
+	buff=config.getfloat('params', 'buff')
 	mbar=6.0
 	nparts={}
 	num={}
+
+	init_dat=np.genfromtxt(init_file)
+	order=np.argsort(init_dat[:,0])[::-1]
+	init_dat=init_dat[order]
+	sim.add(m=init_dat[0,0], x=init_dat[0, 1], y=init_dat[0, 2], z=init_dat[0, 3], vx=init_dat[0, 4], vy=init_dat[0, 5], vz=init_dat[0, 6], r=rt, hash='smbh')
+	print(sim.particles[0].m)
 	##Add particles; Can have different sections with different types of particles (e.g. heavy and light)
 	##see the example config file in repository. Only require section is params which defines global parameters 
 	##for the simulation (pRun and pOut).
 	for ss in sections:
 		num[ss]=int(config.get(ss, 'N'))
 		N=int(buff*num[ss])
-		print(N, num[ss])
 		##rescale stellar masses so they are a fixed fraction of the central mass.
 		frac=config.getfloat(ss, 'frac')
-		mbar=sim.particles[0].m*frac/num[ss]
-		print(mbar)
-		N0=len(sim.particles)
 		#Read data and setup rebound simulation to get orbital elements
-		init_dat=np.genfromtxt(init_file)
-		#Convert velocities to cgs and then to sim units
-		init_dat[:,-3:]=init_dat[:,-3:]*1.0e5/(cgs.G*cgs.M_sun/cgs.pc)**0.5
-		#samp=np.random.randint(0, len(init_dat), N)
-		samp=list(range(len(init_dat)))
+		mbar=sim.particles[0].m*frac/num[ss]
+		N0=len(sim.particles)
+		samp=list(range(1,len(init_dat)))
 		np.random.shuffle(samp)
 		samp=samp[:N]
 		init_dat=init_dat[samp]
+
+		# print(init_dat[:10], samp[:10])
 		for l in range(0,N): # Adds stars
 			m=mbar
 			sim.add(m = m, x=init_dat[l, 1], y=init_dat[l, 2], z=init_dat[l, 3],\
