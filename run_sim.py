@@ -214,6 +214,10 @@ def main():
 	# menc_comp=config.getboolean('params', 'menc_comp')
 	Mbh=config.getfloat('params', 'Mbh')
 	seed=config.getboolean('params', 'seed')
+	# Find out mode value for rayleight dist
+	mean_inc = 10*(2*np.pi/360) #this is in radians!!!
+	modevalue = mean_inc*np.sqrt(2/np.pi)
+	
 	if seed:
 		print('seed:', seed)
 		np.random.seed(1234)
@@ -276,7 +280,7 @@ def main():
 			m=globals()[config.get(ss, "mf")](mbar)
 			M = np.random.uniform(0., 2.*np.pi)
 			# print(m, (sim.particles[0].m/m)**(1./3.)*0.1*cgs.au/cgs.pc)
-			sim.add(m = m, a = a0, e = e*(a0/a_min)**-eslope, inc=inc, Omega = Omega, omega = omega, M = M, primary=sim.particles[0],\
+			sim.add(m = m, a = a0, e = e*(a0/a_min)**-eslope, inc=np.random.rayleigh(modevalue),pomega=np.random.normal(1,0.5),Omega=np.random.uniform(0,2*np.pi), M = M, primary=sim.particles[0],\
 				r=0, hash=str(l))
 		##Indices of each component
 		nparts[ss]=(N0,N0+N-1)
@@ -287,7 +291,8 @@ def main():
 	fen=open(loc+name.replace('.bin', '_en'), 'w')
 	fen.write(sim.gravity+'_'+sim.integrator+'_'+'{0}'.format(sim.dt))
 	if not keep_bins:
-		delete_bins(sim, nparts, section)
+		delete_bins(sim, nparts, sections)
+	print(nparts)
 
 	##Delete all of the excess particles
 	for ss in sections[::-1]:
@@ -299,17 +304,17 @@ def main():
 
 	ms=np.array([pp.m for pp in sim.particles[1:]])
 	print(np.sum(ms))
-	sim.collision=coll
-	sim.collision_resolve=get_tde
+	# sim.collision=coll
+	# sim.collision_resolve=get_tde
 	delR=config.getboolean('params', 'delR')
 	##We cannot get merges in restart !!!
 	# merge=config.getboolean('params', 'merge')
 	# if merge:
 	# 	sim.collision_resolve='merge'
 	##Move this above the previo
-	if not delR:
-		print('delR:', delR)
-		sim.collision_resolve=get_tde_no_delR
+	# if not delR:
+	# 	print('delR:', delR)
+	# 	sim.collision_resolve=get_tde_no_delR
 	# print("gr:", gr, "rinf:", rinf, "alpha:", alpha, "merge:", merge)
 
 
@@ -358,9 +363,10 @@ def main():
 	print(sim.particles[1].hash)
 	print(sim.integrator, sim.dt)
 	##Period at the inner edge of the disk
+
 	p_in=min(2.0*np.pi*(a_min**3.0/Mbh)**0.5, pRun)
 	my_step=0.1*p_in
-
+	# print(2.0*np.pi*(a_min**3.0/Mbh)**0.5)
 	while(t<pRun):
 		fen.write(str(sim.calculate_energy())+'\n')
 		if t>=orb_idx*delta_t:
