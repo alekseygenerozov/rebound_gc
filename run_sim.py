@@ -87,6 +87,33 @@ def heartbeat(sim):
 # See ctypes documentation for details.
 	# print(sim.contents.dt)
 
+def delete_bins(sim, nparts, sections):
+	##Integrate forward a small amount time to initialize accelerations.
+	sim.move_to_com()
+	##Integrate forward to ensure tidal forces are initialized
+	# sim.integrate(sim.t+1.0e-30)
+	##Look for binaries
+	bins=bin_find_sim(sim)
+	print(len(bins))
+	np.savetxt('bins', bins)
+	while len(bins)>0:
+		# bins=np.array(bins)
+		##Delete in reverse order (else the indices would become messed up)
+		to_del=(np.sort(np.unique(bins[:,1]))[::-1]).astype(int)
+		#print "deleting",len(to_del)
+		for idx in to_del:
+			print(type(idx), idx)
+			sim.remove(index=int(idx))
+		bins=bin_find_sim(sim)
+		print(len(bins))
+		N0=1
+		##Update indices for each section after binary deletion
+		for ss in sections:
+			del1=len(np.intersect1d(range(nparts[ss][0],nparts[ss][-1]+1), to_del))
+			tot1=nparts[ss][-1]-nparts[ss][0]+1
+			nparts[ss]=(N0, N0+tot1-del1-1)
+			N0=N0+tot1-del1
+
 def get_tde_no_delR(sim, reb_coll):
 	orbits = sim[0].calculate_orbits(primary=sim[0].particles[0])
 	p1,p2 = reb_coll.p1, reb_coll.p2
@@ -260,32 +287,7 @@ def main():
 	fen=open(loc+name.replace('.bin', '_en'), 'w')
 	fen.write(sim.gravity+'_'+sim.integrator+'_'+'{0}'.format(sim.dt))
 	if not keep_bins:
-		##Integrate forward a small amount time to initialize accelerations.
-		sim.move_to_com()
-		sim.integrate(1.0e-15)
-		##Look for binaries
-		bins=bin_find_sim(sim)
-		bins=np.array(bins)
-		#print len(bins[:,[1,2]])
-		##Delete all the binaries that we found. The identification of binaries depends in part on the tidal field 
-		##of the star cluster, and this will change as we delete stars. So we repeat the binary 
-		##deletion process several times until there are none left.
-		while len(bins>0):
-			##Delete in reverse order (else the indices would become messed up)
-			to_del=(np.sort(np.unique(bins[:,1]))[::-1]).astype(int)
-			#print "deleting",len(to_del)
-			for idx in to_del:
-				print(type(idx), idx)
-				sim.remove(index=int(idx))
-			sim.integrate(sim.t+sim.t*1.0e-14)
-			bins=bin_find_sim(sim)
-			N0=1
-			##Update indices for each section after binary deletion
-			for ss in sections:
-				del1=len(np.intersect1d(range(nparts[ss][0],nparts[ss][-1]+1), to_del))
-				tot1=nparts[ss][-1]-nparts[ss][0]+1
-				nparts[ss]=(N0, N0+tot1-del1-1)
-				N0=N0+tot1-del1
+		delete_bins(sim, nparts, section)
 
 	##Delete all of the excess particles
 	for ss in sections[::-1]:

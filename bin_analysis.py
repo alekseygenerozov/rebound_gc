@@ -125,7 +125,7 @@ def bin_find(loc):
 	##Integrate forward for a small time to ensure that the accelerations
 	##are in sync with the rest of the simulation (this is important for
 	##calculating tidal forces...
-	sim.integrate(sim.t+sim.t*1.0e-14)
+	# sim.integrate(sim.t+sim.t*1.0e-14)
 
 	ps = sim.particles
 	##Mass of central SMBH
@@ -140,7 +140,7 @@ def bin_find(loc):
 		tidal_2 = (m1*m2/d2>ft)
 
 		##If the kinetic energy is less than the potential energy 
-		if ((a_bin>0) and (inside_hill) and (tidal_2)):
+		if ((a_bin>0) and (inside_hill)):
 		#if ((a_bin>0) and (inside_hill)):
 			rh=(((m1+m2)/m0)**(1./3.)*com_d)
 			vh=rh*(m0/com_d**3.)**0.5
@@ -155,7 +155,7 @@ def bin_find_sim(sim):
 	sim.move_to_com()
 	##Integrate forward for a small time to ensure that the accelerations
 	##are in sync with 
-	sim.integrate(sim.t+sim.t*1.0e-14)
+	# sim.integrate(sim.t+sim.t*1.0e-14)
 	
 	ps = sim.particles
 	##mass of of primary 
@@ -169,7 +169,7 @@ def bin_find_sim(sim):
 		tidal_2 = (m1*m2/d2>ft)
 
 		##If the kinetic energy is less than the potential energy 
-		if ((a_bin>0) and (inside_hill) and (tidal_2)):
+		if ((a_bin>0) and (inside_hill)):
 			rh=(((m1+m2)/m0)**(1./3.)*com_d)
 			vh=rh*(m0/com_d**3.)**0.5
 			bin_indics.append([sim.t, i1, i2, d2**0.5, a_bin, a_bin/(((m1+m2)/m0)**(1./3.)*com_d), e_bin, rh, vh])
