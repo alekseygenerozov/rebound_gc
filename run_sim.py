@@ -232,6 +232,7 @@ def main():
 	##Set up a bunch of random states for random number generators
 	rs=RandomState()
 	if seed:
+		print('test')
 		ss = SeedSequence(12345)
 		# Spawn off 10 child SeedSequences to pass to child processes.
 		child_seeds = ss.spawn(100)
@@ -307,6 +308,7 @@ def main():
 	fen=open(loc+name.replace('.bin', '_en'), 'w')
 	fen.write(sim.gravity+'_'+sim.integrator+'_'+'{0}'.format(sim.dt))
 	if not keep_bins:
+		print('deleting binaries')
 		delete_bins(sim, nparts, sections)
 	print(nparts)
 
@@ -340,10 +342,12 @@ def main():
 	##Stellar potential
 	rebx = reboundx.Extras(sim)
 	if rinf>0:
+		print('menc1')
 		menc=rebx.add("menc")
 		menc.params["rinf"]=rinf
 		menc.params["alpha"]=alpha
 	elif rho_rb>0:
+		print('menc2')
 		menc=rebx.add("menc_dp")
 		menc.params["rb"]=rb
 		menc.params["rho_rb"]=rho_rb
@@ -351,6 +355,7 @@ def main():
 		menc.params["beta"]=beta
 	##GR effects
 	if gr:
+		print('gr')
 		gr=rebx.add("gr")
 		##Speed of light in simulation units.
 		gr.params["c"]=config.getfloat('params', 'c')
