@@ -89,8 +89,10 @@ def mfixed(mbar, rs):
 	return mbar
 
 def heartbeat(sim):
-	print(sim.contents.dt, sim.contents.t)
-	sys.stdout.flush()
+	name=sim[0].simulationarchive_filename.decode('utf-8')
+	with open(name.replace('.bin', 'time_log'), 'a') as ff:
+		ff.write('{0} {1}\n'.format(sim.contents.dt, sim.contents.t))
+		ff.flush()
 # sim is a pointer to the simulation object,
 # thus use contents to access object data.
 # See ctypes documentation for details.
