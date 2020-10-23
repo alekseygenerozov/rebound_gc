@@ -9,7 +9,7 @@ import numpy as np
 from collections import OrderedDict
 # sys.path.append('/usr/local/lib/python2.7/dist-packages/')
 import rebound
-import random as rand
+# import random as rand
 from bin_analysis import bin_find_sim
 from bash_command import bash_command as bc
 import math
@@ -17,6 +17,14 @@ import reboundx
 import os
 import shlex
 import cgs_const as cgs
+
+from numpy.random import SeedSequence, default_rng
+from numpy.random import RandomState
+from numpy.random import MT19937
+
+
+
+
 
 def get_last_index(loc="."):
 	trials=bc.bash_command("echo trial_*").decode('utf-8')
@@ -36,7 +44,7 @@ def rotate_vec(angle,axis,vec):
 	vRot = vec*math.cos(angle) + np.cross(axis,vec)*math.sin(angle) + axis*np.dot(axis,vec)*(1 -math.cos(angle))
 	return vRot	
 
-def gen_disk(ang1, ang1_mean, ang2, ang2_mean, ang3, ang3_mean):
+def gen_disk(ang1, ang1_mean, ang2, ang2_mean, ang3, ang3_mean, rs):
 	'''
 	This is from some old code that starts with perfectly aligned e and j vectors and then rotates them by a small amount
 	'''
@@ -44,9 +52,9 @@ def gen_disk(ang1, ang1_mean, ang2, ang2_mean, ang3, ang3_mean):
 	jhat = np.array([0,0,1])
 	bhat = np.cross(jhat,ehat)    # rotate jhat by angle1 over major axis and angle 2 minor axis
 	# rotate ehat by angle2 over minor axis (for consistency) and angle3 about jhat
-	angle1 = np.random.normal(ang1_mean, ang1, 1)
-	angle2 = np.random.normal(ang2_mean, ang2, 1)
-	angle3 = np.random.normal(ang3_mean, ang3, 1)    
+	angle1 = rs.normal(ang1_mean, ang1, 1)
+	angle2 = rs.normal(ang2_mean, ang2, 1)
+	angle3 = rs.normal(ang3_mean, ang3, 1)    
 	jhat = rotate_vec(angle1,ehat,jhat)
 	jhat = rotate_vec(angle2,bhat,jhat)
 	ehat = rotate_vec(angle2,bhat,ehat)
@@ -61,23 +69,23 @@ def gen_disk(ang1, ang1_mean, ang2, ang2_mean, ang3, ang3_mean):
 	return inc, Omega, omega
 
 
-def density(min1, max1, p):
+def density(min1, max1, p, rs):
 	'''
 	Generate a random from a truncated power law PDF with power law index p. 
 	min1 and max1
 
 	'''
-	r=np.random.random(1)[0]
+	r=rs.random(1)[0]
 	if p==1:
 		return min1*np.exp(r*np.log(max1/min1))
 	else:
 		return (r*(max1**(1.-p)-min1**(1.-p))+min1**(1.-p))**(1./(1-p))
 
-def mpow_gc(mbar):
-	return density(1., 60., 1.7)*(mbar/6.0)
+def mpow_gc(mbar, rs):
+	return density(1., 60., 1.7, rs)*(mbar/6.0)
 
 
-def mfixed(mbar):
+def mfixed(mbar, rs):
 	return mbar
 
 def heartbeat(sim):
@@ -218,9 +226,14 @@ def main():
 	mean_inc = 10*(2*np.pi/360) #this is in radians!!!
 	modevalue = mean_inc*np.sqrt(2/np.pi)
 	
+	##Set up a bunch of random states for random number generators
+	rs=RandomState()
 	if seed:
-		print('seed:', seed)
-		np.random.seed(1234)
+		ss = SeedSequence(12345)
+		# Spawn off 10 child SeedSequences to pass to child processes.
+		child_seeds = ss.spawn(100)
+		# Spawn off 10 child SeedSequences to pass to child processes.
+		rs=RandomState(MT19937(child_seeds[args.index]))
 
 	#print pRun, pOut, rt, coll
 	sections=config.sections()
@@ -272,15 +285,15 @@ def main():
 		N0=len(sim.particles)
 		for l in range(0,N): # Adds stars
 			##Use AM's code to generate disk with aligned eccentricity vectors, but a small scatter in i and both omegas...
-			a0=density(a_min, a_max, p)
+			a0=density(a_min, a_max, p, rs)
 			tt=np.interp(a0, [a_min, a_max], [0, twist])
-			inc, Omega, omega=gen_disk(ang1*np.pi/180., (ang1_mean)*np.pi/180., ang2*np.pi/180., (ang2_mean)*np.pi/180., ang3*np.pi/180., (ang3_mean+tt)*np.pi/180.0)
+			inc, Omega, omega=gen_disk(ang1*np.pi/180., (ang1_mean)*np.pi/180., ang2*np.pi/180., (ang2_mean)*np.pi/180., ang3*np.pi/180., (ang3_mean+tt)*np.pi/180.0, rs)
 			print(inc)
 			##Better way to include the mass spectrum...name of function define MF as a parameter.
-			m=globals()[config.get(ss, "mf")](mbar)
-			M = np.random.uniform(0., 2.*np.pi)
+			m=globals()[config.get(ss, "mf")](mbar, rs)
+			M = rs.uniform(0., 2.*np.pi)
 			# print(m, (sim.particles[0].m/m)**(1./3.)*0.1*cgs.au/cgs.pc)
-			sim.add(m = m, a = a0, e = e*(a0/a_min)**-eslope, inc=np.random.rayleigh(modevalue),pomega=np.random.normal(1,0.5),Omega=np.random.uniform(0,2*np.pi), M = M, primary=sim.particles[0],\
+			sim.add(m = m, a = a0, e = e*(a0/a_min)**-eslope, inc=rs.rayleigh(modevalue),pomega=rs.normal(1,0.5),Omega=rs.uniform(0,2*np.pi), M = M, primary=sim.particles[0],\
 				r=0, hash=str(l))
 		##Indices of each component
 		nparts[ss]=(N0,N0+N-1)
