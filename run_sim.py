@@ -197,7 +197,7 @@ def main():
 	bc.bash_command('mkdir {0}'.format(loc))
 	##Default stellar parameters 
 	config=configparser.SafeConfigParser(defaults={'name': 'archive', 'N':'100', 'e':'0.7', 'eslope':'0',
-		'gravity':'compensated', 'integrator':'ias15', 'dt':'0', \
+		'gravity':'basic', 'integrator':'ias15', 'dt':'0', \
 		'a_min':'0.05', 'a_max':'0.5', 'ang1_mean':'0', 'ang2_mean':'0', 'ang3_mean':'0', 'ang1':'2.',\
 		'ang2':'2.', 'ang3':'2.', 'keep_bins':'False', 'coll':'line', 'pRun':'0.1', 'pOut':'0.1', \
 		'p':'1', 'frac':'2.5e-3', 'outDir':'./', 'gr':'True', 'rinf':'4.0', 'alpha':'1.5', 'beta':'1.5', 'rb':'3',\
@@ -225,9 +225,7 @@ def main():
 	# menc_comp=config.getboolean('params', 'menc_comp')
 	Mbh=config.getfloat('params', 'Mbh')
 	seed=config.getboolean('params', 'seed')
-	# Find out mode value for rayleight dist
-	mean_inc = 10*(2*np.pi/360) #this is in radians!!!
-	modevalue = mean_inc*np.sqrt(2/np.pi)
+
 	
 	##Set up a bunch of random states for random number generators
 	rs=RandomState()
@@ -292,12 +290,11 @@ def main():
 			a0=density(a_min, a_max, p, rs)
 			tt=np.interp(a0, [a_min, a_max], [0, twist])
 			inc, Omega, omega=gen_disk(ang1*np.pi/180., (ang1_mean)*np.pi/180., ang2*np.pi/180., (ang2_mean)*np.pi/180., ang3*np.pi/180., (ang3_mean+tt)*np.pi/180.0, rs)
-			print(inc)
 			##Better way to include the mass spectrum...name of function define MF as a parameter.
 			m=globals()[config.get(ss, "mf")](mbar, rs)
 			M = rs.uniform(0., 2.*np.pi)
 			# print(m, (sim.particles[0].m/m)**(1./3.)*0.1*cgs.au/cgs.pc)
-			sim.add(m = m, a = a0, e = e*(a0/a_min)**-eslope, inc=rs.rayleigh(modevalue),pomega=rs.normal(1,0.5),Omega=rs.uniform(0,2*np.pi), M = M, primary=sim.particles[0],\
+			sim.add(m = m, a = a0, e = e*(a0/a_min)**-eslope, inc=inc, omega=omega, Omega=Omega, M = M, primary=sim.particles[0],\
 				r=0, hash=str(l))
 		##Indices of each component
 		nparts[ss]=(N0,N0+N-1)
@@ -322,17 +319,17 @@ def main():
 
 	ms=np.array([pp.m for pp in sim.particles[1:]])
 	print(np.sum(ms))
-	# sim.collision=coll
-	# sim.collision_resolve=get_tde
+	sim.collision=coll
+	sim.collision_resolve=get_tde
 	delR=config.getboolean('params', 'delR')
 	##We cannot get merges in restart !!!
 	# merge=config.getboolean('params', 'merge')
 	# if merge:
 	# 	sim.collision_resolve='merge'
 	##Move this above the previo
-	# if not delR:
-	# 	print('delR:', delR)
-	# 	sim.collision_resolve=get_tde_no_delR
+	if not delR:
+		print('delR:', delR)
+		sim.collision_resolve=get_tde_no_delR
 	# print("gr:", gr, "rinf:", rinf, "alpha:", alpha, "merge:", merge)
 
 
