@@ -18,7 +18,16 @@ import os
 import shlex
 import cgs_const as cgs
 
-# np.random.seed(3)
+from scipy.interpolate import interp1d
+from extrap import extrap
+
+
+from numpy.random import SeedSequence, default_rng
+from numpy.random import RandomState
+from numpy.random import MT19937
+
+
+
 def get_last_index(loc="."):
 	trials=bc.bash_command("echo trial_*").decode('utf-8')
 	trials=shlex.split(trials)
@@ -37,56 +46,41 @@ def rotate_vec(angle,axis,vec):
 	vRot = vec*math.cos(angle) + np.cross(axis,vec)*math.sin(angle) + axis*np.dot(axis,vec)*(1 -math.cos(angle))
 	return vRot	
 
-def gen_disk(ang1, ang1_mean, ang2, ang2_mean, ang3, ang3_mean):
-	'''
-	This is from some old code that starts with perfectly aligned e and j vectors and then rotates them by a small amount
-	'''
-	ehat = np.array([1,0,0])
-	jhat = np.array([0,0,1])
-	bhat = np.cross(jhat,ehat)    # rotate jhat by angle1 over major axis and angle 2 minor axis
-	# rotate ehat by angle2 over minor axis (for consistency) and angle3 about jhat
-	angle1 = np.random.normal(ang1_mean, ang1, 1)
-	angle2 = np.random.normal(ang2_mean, ang2, 1)
-	angle3 = np.random.normal(ang3_mean, ang3, 1)    
-	jhat = rotate_vec(angle1,ehat,jhat)
-	jhat = rotate_vec(angle2,bhat,jhat)
-	ehat = rotate_vec(angle2,bhat,ehat)
-	ehat = rotate_vec(angle3,jhat,ehat)    
-	n = np.cross(np.array([0,0,1]), jhat)
-	n = n / np.linalg.norm(n)   
-	Omega = math.atan2(n[1], n[0])
-	omega = math.acos(np.dot(n, ehat))
-	if ehat[2] < 0:
-		omega = 2*np.pi - omega    
-	inc=math.acos(jhat[2])    
-	return inc, Omega, omega
-
-
-def density(min1, max1, p):
-	'''
-	Generate a random from a truncated power law PDF with power law index p. 
-	min1 and max1
-
-	'''
-	r=np.random.random(1)[0]
-	if p==1:
-		return min1*np.exp(r*np.log(max1/min1))
-	else:
-		return (r*(max1**(1.-p)-min1**(1.-p))+min1**(1.-p))**(1./(1-p))
-
-def mpow_gc(mbar):
-	return density(1., 60., 1.7)*(mbar/6.0)
-
-
-def mfixed(mbar):
-	return mbar
 
 def heartbeat(sim):
 	print(sim.contents.dt, sim.contents.t)
+
 # sim is a pointer to the simulation object,
 # thus use contents to access object data.
 # See ctypes documentation for details.
 	# print(sim.contents.dt)
+
+def delete_bins(sim, nparts, sections):
+	##Integrate forward a small amount time to initialize accelerations.
+	sim.move_to_com()
+	##Integrate forward to ensure tidal forces are initialized
+	# sim.integrate(sim.t+1.0e-30)
+	##Look for binaries
+	bins=bin_find_sim(sim)
+	print(len(bins))
+	np.savetxt('bins', bins)
+	while len(bins)>0:
+		# bins=np.array(bins)
+		##Delete in reverse order (else the indices would become messed up)
+		to_del=(np.sort(np.unique(bins[:,1]))[::-1]).astype(int)
+		#print "deleting",len(to_del)
+		for idx in to_del:
+			print(type(idx), idx)
+			sim.remove(index=int(idx))
+		bins=bin_find_sim(sim)
+		print(len(bins))
+		N0=1
+		##Update indices for each section after binary deletion
+		for ss in sections:
+			del1=len(np.intersect1d(range(nparts[ss][0],nparts[ss][-1]+1), to_del))
+			tot1=nparts[ss][-1]-nparts[ss][0]+1
+			nparts[ss]=(N0, N0+tot1-del1-1)
+			N0=N0+tot1-del1
 
 def get_tde_no_delR(sim, reb_coll):
 	orbits = sim[0].calculate_orbits(primary=sim[0].particles[0])
@@ -159,13 +153,11 @@ def main():
 	loc="trial_{0}/".format(args.index)
 	bc.bash_command('mkdir {0}'.format(loc))
 	##Default stellar parameters 
-	config=configparser.SafeConfigParser(defaults={'name': 'archive', 'N':'100', 'e':'0.7', 'eslope':'0',
-		'gravity':'compensated', 'integrator':'ias15', 'dt':'0', \
-		'a_min':'0.05', 'a_max':'0.5', 'ang1_mean':'0', 'ang2_mean':'0', 'ang3_mean':'0', 'ang1':'2.',\
-		'ang2':'2.', 'ang3':'2.', 'keep_bins':'False', 'coll':'line', 'pRun':'0.1', 'pOut':'0.1', \
+	config=configparser.SafeConfigParser(defaults={'name': 'archive', 'N':'100', 
+		'gravity':'basic', 'integrator':'ias15', 'dt':'0', 'keep_bins':'False', 'coll':'line', 'pRun':'0.1', 'pOut':'0.1', \
 		'p':'1', 'frac':'2.5e-3', 'outDir':'./', 'gr':'True', 'rinf':'4.0', 'alpha':'1.5', 'beta':'1.5', 'rb':'3',\
-		'rho_rb':'0','rt':'1e-4', 'mf':"mfixed", 'merge':'False', 'menc_comp':'False', 'Mbh':'4e6',\
-		'c':'4571304.57795483', 'delR':'True', 'epsilon':'1e-9', 'twist':'0', 'buff':'1.5'}, dict_type=OrderedDict)
+		'rho_rb':'0','rt':'1e-4', 'merge':'False', 'menc_comp':'False', 'Mbh':'4e6',\
+		'c':'4571304.57795483', 'delR':'True', 'epsilon':'1e-9', 'buff':'1.5', 'min_dt':'0', 'seed':'false'}, dict_type=OrderedDict)
 	# config.optionxform=str
 	config.read(config_file)
 
@@ -201,15 +193,29 @@ def main():
 	sim.gravity=config.get('params', 'gravity')
 	sim.integrator=config.get('params', 'integrator')
 	epsilon=config.getfloat('params', 'epsilon')
+	min_dt=config.getfloat('params', 'min_dt')
+
 	sim.ri_ias15.epsilon=epsilon
+	sim.ri_ias15.min_dt=min_dt
 	dt=config.getfloat('params', 'dt')
 	if dt:
 		sim.dt=dt
 
 	buff=config.getfloat('params', 'buff')
-	mbar=6.0
+	# mbar=6.0
 	nparts={}
 	num={}
+	seed=config.getboolean('params', 'seed')
+	##Set up a bunch of random states for random number generators
+	rs=RandomState()
+	if seed:
+		print('test')
+		ss = SeedSequence(12345)
+		# Spawn off 10 child SeedSequences to pass to child processes.
+		child_seeds = ss.spawn(100)
+		# Spawn off 10 child SeedSequences to pass to child processes.
+		rs=RandomState(MT19937(child_seeds[args.index]))
+
 
 	init_dat=np.genfromtxt(init_file)
 	order=np.argsort(init_dat[:,0])[::-1]
@@ -228,17 +234,19 @@ def main():
 		mbar=sim.particles[0].m*frac/num[ss]
 		N0=len(sim.particles)
 		samp=list(range(1,len(init_dat)))
-		np.random.shuffle(samp)
+		rs.shuffle(samp)
 		samp=samp[:N]
 		init_dat=init_dat[samp]
 
 		# print(init_dat[:10], samp[:10])
 		for l in range(0,N): # Adds stars
-			m=mbar
-			sim.add(m = m, x=init_dat[l, 1], y=init_dat[l, 2], z=init_dat[l, 3],\
-				vx=init_dat[l, 4], vy=init_dat[l, 5], vz=init_dat[l, 6], hash=str(l))
+			# m=mbar
+			sim.add(m = mbar, x=init_dat[l, 1], y=init_dat[l, 2], z=init_dat[l, 3],\
+				vx=init_dat[l, 4], vy=init_dat[l, 5], vz=init_dat[l, 6], r=0, hash=str(l))
 		##Indices of each component
 		nparts[ss]=(N0,N0+N-1)
+		print(nparts)
+
 
 	##Deleting unbound particles
 	orbs=sim.calculate_orbits(primary=sim.particles[0])
@@ -254,6 +262,12 @@ def main():
 		tot1=nparts[ss][-1]-nparts[ss][0]+1
 		nparts[ss]=(N0, N0+tot1-del1-1)
 		N0=N0+tot1-del1
+	print(len(sim.particles), nparts)
+
+	if not keep_bins:
+		delete_bins(sim, nparts, sections)
+	print(len(sim.particles), nparts)
+
 	##Delete all of the excess particles
 	for ss in sections[::-1]:
 		to_del=range(nparts[ss][0]+num[ss], nparts[ss][-1]+1)[::-1]
@@ -298,7 +312,7 @@ def main():
 	##Set up simulation archive for output
 	# sa = rebound.SimulationArchive(loc+name, rebxfilename='rebx.bin')
 	sim.automateSimulationArchive(loc+name,interval=pOut*pRun,deletefile=True)
-	# sim.heartbeat=heartbeat
+	sim.heartbeat=heartbeat
 	sim.move_to_com()
 	sim.simulationarchive_snapshot(loc+name)
 	bc.bash_command('cp {0} {1}'.format(config_file, loc))
