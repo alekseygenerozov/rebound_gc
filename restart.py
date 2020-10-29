@@ -65,6 +65,8 @@ def main():
 	# merge=config.getboolean('params', 'merge')
 	# if merge:
 	# 	sim.collision_resolve='merge'
+	print(delR)
+	print(gr)
 	if not delR:
 		sim.collision_resolve=get_tde_no_delR
 

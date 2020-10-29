@@ -157,7 +157,7 @@ def main():
 		'gravity':'basic', 'integrator':'ias15', 'dt':'0', 'keep_bins':'False', 'coll':'line', 'pRun':'0.1', 'pOut':'0.1', \
 		'p':'1', 'frac':'2.5e-3', 'outDir':'./', 'gr':'True', 'rinf':'4.0', 'alpha':'1.5', 'beta':'1.5', 'rb':'3',\
 		'rho_rb':'0','rt':'1e-4', 'merge':'False', 'menc_comp':'False', 'Mbh':'4e6',\
-		'c':'4571304.57795483', 'delR':'True', 'epsilon':'1e-9', 'buff':'1.5', 'min_dt':'0', 'seed':'false'}, dict_type=OrderedDict)
+		'c':'4571304.57795483', 'delR':'True', 'epsilon':'1e-9', 'buff':'1.5', 'min_dt':'0', 'seed':'false', 'cen':'False'}, dict_type=OrderedDict)
 	# config.optionxform=str
 	config.read(config_file)
 
@@ -293,12 +293,16 @@ def main():
 
 	##Stellar potential
 	rebx = reboundx.Extras(sim)
+
+	cen=config.getboolean('params', 'cen')
+	cen='_cen' if cen else ''
+	print(cen)
 	if rinf>0:
 		menc=rebx.add("menc")
 		menc.params["rinf"]=rinf
 		menc.params["alpha"]=alpha
 	elif rho_rb>0:
-		menc=rebx.add("menc_dp")
+		menc=rebx.add("menc_dp"+cen)
 		menc.params["rb"]=rb
 		menc.params["rho_rb"]=rho_rb
 		menc.params["alpha"]=alpha
@@ -312,7 +316,7 @@ def main():
 	##Set up simulation archive for output
 	# sa = rebound.SimulationArchive(loc+name, rebxfilename='rebx.bin')
 	sim.automateSimulationArchive(loc+name,interval=pOut*pRun,deletefile=True)
-	sim.heartbeat=heartbeat
+	# sim.heartbeat=heartbeat
 	sim.move_to_com()
 	sim.simulationarchive_snapshot(loc+name)
 	bc.bash_command('cp {0} {1}'.format(config_file, loc))
