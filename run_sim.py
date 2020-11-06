@@ -126,6 +126,9 @@ def delete_bins(sim, nparts, sections):
 			N0=N0+tot1-del1
 
 def get_tde_no_delR(sim, reb_coll):
+	'''
+	TDE detection for non-relativistic case...
+	'''
 	orbits = sim[0].calculate_orbits(primary=sim[0].particles[0])
 	p1,p2 = reb_coll.p1, reb_coll.p2
 	idx, idx0 = max(p1, p2), min(p1, p2)
