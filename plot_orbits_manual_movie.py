@@ -11,6 +11,8 @@ import rebound
 
 from latex_exp import latex_exp
 from rebound_gc import bin_analysis
+import argparse
+import json
 
 
 @np.vectorize
@@ -39,8 +41,19 @@ def bash_command(cmd):
 	process=subprocess.Popen(['/bin/bash', '-c',cmd],  stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 	return process.communicate()[0]
 
+parser=argparse.ArgumentParser(description='Set up a rebound run')
+parser.add_argument('loc',help='Data location')
+parser.add_argument('--Mbh', '-M', type=float, default=4e6,help='Mass of central body')
+parser.add_argument('--xlim', type=float, default=1)
+parser.add_argument('--ylim', type=float, default=1)
+args=parser.parse_args()
+
 ##Location of simulation data...
-loc=sys.argv[1]
+loc=args.loc
+Mbh=args.Mbh
+xlim=args.xlim
+ylim=args.ylim
+
 ##You will have to modify the names of the data files (the archive_out part) here. 
 frames=bash_command('echo {0}/archive_out_*.dat'.format(loc)).decode('utf-8')
 frames=len(shlex.split(frames))
@@ -53,7 +66,7 @@ x=np.empty([frames, len(samp), pts+1])
 y=np.empty([frames, len(samp), pts+1])
 z=np.empty([frames, len(samp), pts+1])
 sim=rebound.Simulation()
-sim.add(m=float(sys.argv[2]))
+sim.add(m=Mbh)
 
 fig,ax=plt.subplots(figsize=(10,9))
 dis=[]
@@ -79,6 +92,7 @@ for idx in range(frames):
 		# 	continue
 		##Better use hash...
 		if((dat[i,0]*(1-dat[i,1])<=3e-4) & (~np.in1d(hashes[i], dis))[0]):
+			print('Dis!', dat[i,0], dat[i,1])
 			dis.append(hashes[i])
 			dis_indics.append(i)
 
@@ -109,21 +123,22 @@ for idx in range(frames):
 	if idx==0:
 		en0=en
 		en0b=enb
-	for jj in range(len(dat_filt)):
-		sim.remove(len(dat_filt)-jj)
+	for jj in range(len(dat)):
+		sim.remove(len(dat)-jj)
 	print('parts:'+str(len(sim.particles)))
 
 	for tmp in dis_indics:
 		ax.plot(x[idx,tmp,:-1], y[idx,tmp,:-1], '--', color='b')
 			
  
-	ax.annotate('unbound: {0}'.format(unbound)+', particles:{0}, '.format(len(dat))+', energy error={0:.2g}\n'.format((en-en0)/en0, (enb-en0b)/en0b)+'retro frac={0:.2f}'.format(frac[idx])+r'$M_d$'+'={0}'.format(latex_exp.latex_exp(np.sum(init_disk[1:,-1])))+r' $M_{\odot}$'+', t={0} yr\nBlue, Dashed=Disruption'.format(latex_exp.latex_exp(idx*0.004*1.5e7)), (0.01, 0.99),\
+	ax.annotate('unbound: {0}'.format(unbound)+', particles:{0}, '.format(len(dat))+'energy error={0:.2g}\n'.format((en-en0)/en0, (enb-en0b)/en0b)+'retro frac={0:.2f}, '.format(frac[idx])+r'$M_d$'+'={0}'.format(latex_exp.latex_exp(np.sum(init_disk[1:,-1])))+r' $M_{\odot}$'+', t={0} yr\nBlue, Dashed=Disruption'.format(latex_exp.latex_exp(idx*0.004*1.5e7)), (0.01, 0.99),\
 		xycoords='axes fraction', va='top', fontsize=16)
 	ax.set_xlabel('x [pc]')
 	ax.set_ylabel('y [pc]')
-	ax.set_xlim(-1,1)
-	# ax.set_xticks([-1,-0.5,0,0.5,1])
-	ax.set_ylim(-1,1)
+	ax.set_xlim(-xlim, xlim)
+	ax.set_ylim(-ylim, ylim)
+	# # ax.set_xticks([-1,-0.5,0,0.5,1])
+	# ax.set_ylim(-1,1)
 	# ax.set_yticks([-1,-0.5,0,0.5,1])
 	fig.savefig(loc+'/sim_movie_man_{0:03d}.png'.format(idx), ppi=72)
 	plt.cla()
