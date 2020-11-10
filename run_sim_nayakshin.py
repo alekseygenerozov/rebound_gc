@@ -339,7 +339,7 @@ def main():
 	##Period at the inner edge of the disk (hard-code former to 0.05 for now)
 	a_min=0.05
 	p_in=2.0*np.pi*(a_min**3.0/Mbh)**0.5
-	my_step=0.1*p_in
+	my_step=min(0.1*p_in, pRun)
 	print(my_step)
 	while(t<pRun):
 		fen.write(str(sim.calculate_energy())+'\n')
@@ -353,6 +353,7 @@ def main():
 		sim.integrate(sim.t+my_step)
 		orbits=sim.calculate_orbits(primary=sim.particles[0])
 		rps=np.array([oo.a*(1-oo.e) for oo in orbits])
+
 		if np.any(rps<rt):
 			##Add 1 since central black hole is not included in rps
 			indics=np.array(range(len(rps)))[rps<rt]+1
