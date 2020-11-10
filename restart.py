@@ -9,6 +9,7 @@ from bash_command import bash_command as bc
 
 import rebound
 import reboundx
+from astropy.io import ascii
 
 
 def main():
@@ -69,6 +70,9 @@ def main():
 	print(gr)
 	if not delR:
 		sim.collision_resolve=get_tde_no_delR
+	tmp_tde_archive=ascii.read(loc+'/archive_tde')
+	tmp_tde_archive=tmp_tde_archive[tmp_tde_archive['col1']<=sim.t]
+	ascii.write(tmp_tde_archive, loc+'/archive_tde', overwrite=True)
 
 	##Stellar potential
 	rebx = reboundx.Extras(sim)
