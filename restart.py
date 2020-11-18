@@ -70,9 +70,13 @@ def main():
 	print(gr)
 	if not delR:
 		sim.collision_resolve=get_tde_no_delR
-	tmp_tde_archive=ascii.read(loc+'/archive_tde')
-	tmp_tde_archive=tmp_tde_archive[tmp_tde_archive['col1']<=sim.t]
-	ascii.write(tmp_tde_archive, loc+'/archive_tde', overwrite=True)
+	try:
+		tmp_tde_archive=ascii.read(loc+'/archive_tde')
+		tmp_tde_archive=tmp_tde_archive[tmp_tde_archive['col1']<=sim.t]
+		ascii.write(tmp_tde_archive, loc+'/archive_tde', overwrite=True)
+	except FileNotFoundError:
+		print("No existing TDE file")
+		pass
 
 	##Stellar potential
 	rebx = reboundx.Extras(sim)
