@@ -17,23 +17,39 @@ import json
 
 @np.vectorize
 def menc_dp(dist, rho_rb, rb, alpha, beta):
-    '''
-    Mass enclosed 
-    '''
-    if dist<rb:
-        menc_rad=(dist/rb)**alpha/(alpha)
-    else:
-        menc_rad=1/(alpha)+(1/beta)*((dist/rb)**beta-1)
-    menc=4*np.pi*rb**3.*rho_rb*menc_rad
-    return menc
+	'''
+	Mass enclosed 
+	'''
+	if dist<rb:
+		menc_rad=(dist/rb)**alpha/(alpha)
+	else:
+		menc_rad=1/(alpha)+(1/beta)*((dist/rb)**beta-1)
+	menc=4*np.pi*rb**3.*rho_rb*menc_rad
+	return menc
 
 @np.vectorize
 def stellar_pot_dp(dist, rho_rb, rb, alpha, beta):
-    if dist<rb:
-        rho_int=4.*np.pi*rho_rb*rb**2.*(1-(dist/rb)**(alpha-1))/(alpha-1)
-    else:
-        rho_int=4.*np.pi*rho_rb*rb**2.*(1-(dist/rb)**(beta-1))/(beta-1)
-    return (-menc_dp(dist, rho_rb, rb, alpha, beta)/dist-rho_int)
+	if dist<rb:
+		rho_int=4.*np.pi*rho_rb*rb**2.*(1-(dist/rb)**(alpha-1))/(alpha-1)
+	else:
+		rho_int=4.*np.pi*rho_rb*rb**2.*(1-(dist/rb)**(beta-1))/(beta-1)
+	return (-menc_dp(dist, rho_rb, rb, alpha, beta)/dist-rho_int)
+
+def get_evec_avg(sim):
+	'''
+	Get the mean eccentricity from a rebound simulation
+	'''
+
+	vels=np.array([np.array(pp.vxyz)-np.array(sim.particles[0].vxyz) for pp in sim.particles[1:]])
+	rvecs=np.array([np.array(pp.xyz)-np.array(sim.particles[0].xyz) for pp in sim.particles[1:]])
+	rhats=np.array([rvecs[ii]/np.linalg.norm(rvecs[ii]) for ii in range(len(sim.particles[1:]))])
+	js=np.array([np.cross(rvecs[ii], vels[ii]) for ii in range(len(sim.particles[1:]))])
+
+	evec=np.array([np.cross(vels[ii], js[ii])/sim.particles[0].m-rhats[ii] for ii in range(len(sim.particles[1:]))])
+	enorm=np.array([np.linalg.norm(evec[ii]) for ii in range(len(sim.particles[1:]))])
+	ehats=np.array([evec[ii]/enorm[ii] for ii in range(len(sim.particles[1:]))])
+
+	return np.sum(ehats[enorm<1], axis=0)/len(enorm[enorm<1])
 
 
 def bash_command(cmd):
@@ -114,11 +130,12 @@ for idx in range(frames):
 
 			ax.plot(x[idx,i,:-1], y[idx,i,:-1], '-', color=col)
 
-	tt=bin_analysis.bin_find_sim(sim)
-	print(tt)
+	# tt=bin_analysis.bin_find_sim(sim)
+	# print(tt)
 	##Add stellar potential constribution here
 	en=sim.calculate_energy()+np.sum(en_stellar)
 	enb=sim.calculate_energy()
+	ee=get_evec_avg(sim)
 
 	if idx==0:
 		en0=en
@@ -131,7 +148,7 @@ for idx in range(frames):
 		ax.plot(x[idx,tmp,:-1], y[idx,tmp,:-1], '--', color='b')
 			
  
-	ax.annotate('unbound: {0}'.format(unbound)+', particles:{0}, '.format(len(dat))+'energy error={0:.2g}\n'.format((en-en0)/en0, (enb-en0b)/en0b)+'retro frac={0:.2f}, '.format(frac[idx])+r'$M_d$'+'={0}'.format(latex_exp.latex_exp(np.sum(init_disk[1:,-1])))+r' $M_{\odot}$'+', t={0} yr\nBlue, Dashed=Disruption'.format(latex_exp.latex_exp(idx*0.004*1.5e7)), (0.01, 0.99),\
+	ax.annotate('unbound: {0}'.format(unbound)+', particles:{0}, '.format(len(dat))+'energy error={0:.2g}\n'.format((en-en0)/en0, (enb-en0b)/en0b)+'retro frac={0:.2f}, '.format(frac[idx])+r'$M_d$'+'={0}'.format(latex_exp.latex_exp(np.sum(init_disk[1:,-1])))+r' $M_{\odot}$'+', t={0} yr\nBlue, Dashed=Disruption\n'.format(latex_exp.latex_exp(idx*0.004*1.5e7))+'evec:{0}'.format(str(ee)), (0.01, 0.99),\
 		xycoords='axes fraction', va='top', fontsize=16)
 	ax.set_xlabel('x [pc]')
 	ax.set_ylabel('y [pc]')
